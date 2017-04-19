@@ -66,7 +66,7 @@ String ampmText = " AM";	// Show AM or PM to clock display
 
 bool diplayOnOff = true;	// Display On or Off, TRUE = ON, FALSE = OFF
 
-int locX = 32, locY = 9;	// Clock location on display Default locX = 32, locY = 0
+int locX = 0, locY = 0;	// Clock location on display Default locX = 0, locY = 0
 
 int sAv, mAv, hAv; // Variable used to adjust time. Seconds, Minutes, Hours.
 int * arrD; // Display Array pointer Seconds[0], Minutes[1], Hours[2]
@@ -211,7 +211,7 @@ void setup()
 void loop()
 {	
 	arduboy.clear();
-
+	arduboy.setTextSize(1);
 	// Second incrementation, every 1000 millisecond 1 second is added
 	if (millis() >= milSec)
 	{
@@ -444,24 +444,24 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 				}
 
 			}
-			else
+			else if (hAv != 0)
 			{
 				if (ClockOrAlarm)
 				{
 					ampm = true;
 				}
-				else if (hA < 12)
+				else if (h < 12)
 				{
-					ampmA = true;
+					ampm = true;
 				}
 
 				if (!ClockOrAlarm)
 				{
 					ampmA = true;
 				}	
-				else if (h < 12)
+				else if (hA < 12)
 				{
-					ampm = true;
+					ampmA = true;
 				}
 			}
 			if (hAv == 0)
@@ -470,18 +470,18 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 				{
 					hAv = 12;
 				}
-				else if (hA == 0)
+				else if (h == 0)
 				{
-					hA = 12;
+					h = 12;
 				}
 
 				if (!ClockOrAlarm)
 				{
 					hAv = 12;
 				}
-				else if (h == 0)
+				else if (hA == 0)
 				{
-					h = 12;
+					hA = 12;
 				}
 			}
 		}
@@ -715,22 +715,22 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer)
 		{
 			if (ampm)
 			{
-				ampmText = " AM";
+				ampmText = "AM";
 			}
 			else
 			{
-				ampmText = " PM";
+				ampmText = "PM";
 			}
 		}
 		else if (!ClockOrAlarm)
 		{
 			if (ampmA)
 			{
-				ampmText = " AM";
+				ampmText = "AM";
 			}
 			else
 			{
-				ampmText = " PM";
+				ampmText = "PM";
 			}
 		}
 	}
@@ -964,26 +964,26 @@ void DisplayClock()
 {
 	if (timerOnSetting)
 	{
-		arduboy.setCursor(locX - 32, locY + 12);
+		arduboy.setCursor(locX, locY + 21);
 		arduboy.print("Hold RIGHT to stop");
-		arduboy.setCursor(locX, locY + 22);
+		arduboy.setCursor(locX + 32, locY + 31);
 		arduboy.print(CreateDisplayText(sT, mT, hT, false, true));
 	}
 	else
 	{
-		arduboy.setCursor(locX - 32, locY + 12);
+		arduboy.setCursor(locX, locY + 21);
 		arduboy.print("Hold UP for Timer");
 	}
 	if (alarmOnSetting)
 	{
-		arduboy.setCursor(locX - 32, locY + 32);
+		arduboy.setCursor(locX, locY + 41);
 		arduboy.print("Hold LEFT to turn OFF");
-		arduboy.setCursor(locX, locY + 42);
+		arduboy.setCursor(locX + 32, locY + 51);
 		arduboy.print(CreateDisplayText(sA, mA, hA, false, false));
 	}
 	else
 	{
-		arduboy.setCursor(locX - 32, locY + 32);
+		arduboy.setCursor(locX, locY + 41);
 		arduboy.print("Hold DOWN for Alarm");
 	}
 	
@@ -992,7 +992,8 @@ void DisplayClock()
 	s = *(arrD);
 	m = *(arrD + 1);
 	h = *(arrD + 2);
-	arduboy.setCursor(locX, locY);	// Set location for clock
+	arduboy.setTextSize(2);
+	arduboy.setCursor(locX + 2, locY);	// Set location for clock
 	clockText = CreateDisplayText(s, m, h, true, false);
 	arduboy.print(clockText); // Print clock
 }
@@ -1024,12 +1025,14 @@ void DisplayAlarm()
 	arduboy.setCursor(0, 0);	// Print clock type top left corner
 	arduboy.print(clockTypeText + "  ALARM SETTING\n\r" + alarmStatusText);
 
-	arduboy.setCursor(locX, locY + 32);
+	arduboy.setCursor(locX + 2, locY + 32);
 	arrD = AdjustTime(sA, mA, hA, false, false);
 	sA = *(arrD);
 	mA = *(arrD + 1);
 	hA = *(arrD + 2);
+	arduboy.setTextSize(2);
 	arduboy.print(CreateDisplayText(sA, mA, hA, false, false));
+	arduboy.setTextSize(1);
 }
 
 void DisplayTimer()
@@ -1055,8 +1058,10 @@ void DisplayTimer()
 		mT = *(arrD + 1);
 		hT = *(arrD + 2);
 	}
-	arduboy.setCursor(locX, locY + 32);
+	arduboy.setCursor(locX + 7, locY + 32);
+	arduboy.setTextSize(2);
 	arduboy.print(CreateDisplayText(sT, mT, hT, false, true));
+	arduboy.setTextSize(1);
 }
 
 // If 'timerOnSetting' is TRUE the time will start counting down.
