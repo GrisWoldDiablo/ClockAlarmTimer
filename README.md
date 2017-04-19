@@ -1,13 +1,11 @@
 # ClockAlarmTimer
 Fully functionnal clock with an alarm and a timer
 
-Clock Alarm Timer 12h or 24h
-Version : 2.0,  April 18, 2017
-Author: GrisWold Diablo
-Twitter: @GrisWoldDiablo
+###### Version : 2.0,  April 18, 2017
+###### Author: GrisWold Diablo
+###### Twitter: @GrisWoldDiablo
 
-## NOTES:
-Feel free to use this code, no need to give me credit.
+##### NOTE: Feel free to use this code, no need to give me credit.
 
 # APPLICATION CONTROL INFORMATION
 ## SCREEN:
