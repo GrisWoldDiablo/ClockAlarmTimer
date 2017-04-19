@@ -607,8 +607,16 @@ int MinuteTurn(bool changeM, bool ClockOrAlarm, bool setTimer)
 		mAv++;
 		if (mAv > 59)
 		{
-			mAv = 0;
-			HourTurn(true, ClockOrAlarm, setTimer);
+			if (!setTimer)
+			{
+				mAv = 0;
+				HourTurn(true, ClockOrAlarm, setTimer);
+			}
+			else
+			{
+				mAv = 0;
+			}
+			
 		}
 	}
 	else
@@ -623,7 +631,7 @@ int MinuteTurn(bool changeM, bool ClockOrAlarm, bool setTimer)
 			}
 			else
 			{
-				mAv = 0;
+				mAv = 59;
 			}
 			
 		}
@@ -638,8 +646,16 @@ int SecondTurn(bool changeS, bool ClockOrAlarm, bool setTimer)
 		sAv++;
 		if (sAv > 59)
 		{
-			sAv = 0;
-			MinuteTurn(true, ClockOrAlarm, setTimer);
+			if (!setTimer)
+			{
+				sAv = 0;
+				MinuteTurn(true, ClockOrAlarm, setTimer);
+			}
+			else
+			{
+				sAv = 0;
+			}
+			
 		}
 	}
 	else
@@ -654,7 +670,7 @@ int SecondTurn(bool changeS, bool ClockOrAlarm, bool setTimer)
 			}
 			else
 			{
-				sAv = 0;
+				sAv = 59;
 			}
 			
 		}
