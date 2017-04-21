@@ -1156,7 +1156,7 @@ void DisplayTimer()
 	// Verify Timer status and set string accordingly
 	if (timerOnSetting)
 	{
-		timerStatusText = " Hold RIGHT to Stop Timer";
+		timerStatusText = " Hold RIGHT to Stop";
 	}
 	else
 	{
