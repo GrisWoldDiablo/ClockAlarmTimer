@@ -67,14 +67,13 @@ String ampmText = " AM";	// Show AM or PM to clock display
 bool diplayOnOff = true;	// Display On or Off, TRUE = ON, FALSE = OFF
 
 int locX = 0, locY = 0;	// Clock location on display Default locX = 0, locY = 0
-
 int sAv, mAv, hAv; // Variable used to adjust time. Seconds, Minutes, Hours.
 int * arrD; // Display Array pointer Seconds[0], Minutes[1], Hours[2]
 
 // Counter used for when a button is held down.
 long heldTime = 1500;	// Default 1.5 seconds button held down, count milliseconds
 long timeHeld = 0;	// Used for counting
-bool startCounting = true;	// Start the counter to change window
+bool startCounting = true;	// Determin if its start counting for a button held, TRUE = Not Start counting, FALSE = Start counting
 bool buttonHeld = false; // Check if button has been held long enough, TRUE = Change, FALSE = Keep counting
 
 // Alarm variables
@@ -91,7 +90,7 @@ bool timerSetting = false; // Change to Timer setting window, TRUE = Display Tim
 bool timerOnSetting = false;	// Verify is timer is On or OFF, TRUE = Timer ON, FALSE - Timer OFF
 
 
-
+// Store the music score, (Music from the Arduboy Playtune example)
 const byte score[] PROGMEM = {
 	2,154, 0x90,62, 0,166, 0x90,64, 0,166, 0x90,66, 0,166, 0x90,64, 0,166,
 	0x90,67, 0,166, 0x90,66, 0,166, 0x90,64, 0,166, 0x90,62, 0,166, 0x90,69,
@@ -200,28 +199,28 @@ const byte score[] PROGMEM = {
 
 void setup()
 {
-	ardtune.initChannel(PIN_SPEAKER_1);
-	ardtune.initChannel(PIN_SPEAKER_2);
-	arduboy.boot();
-	arduboy.setFrameRate(frameRate);	// Time calculated based on set variable frames per second.
-	arduboy.clear();
-	arduboy.audio.on();
+	ardtune.initChannel(PIN_SPEAKER_1);	// Initialise first speaker pin
+	ardtune.initChannel(PIN_SPEAKER_2);	// Initialise second speaker pin
+	arduboy.boot();	// Boot the Arduboy with not logo. Straight to the App.
+	arduboy.setFrameRate(frameRate);	// Time calculated based on set variable frames per second
+	arduboy.clear();	// Clear display buffer
+	arduboy.audio.on();	// Turn on Audio.
 }
 
 void loop()
 {	
-	arduboy.clear();
-	arduboy.setTextSize(1);
+
 	// Second incrementation, every 1000 millisecond 1 second is added
 	if (millis() >= milSec)
 	{
-		milSec += fullSec;
+		milSec += fullSec;	// Add 1 second to the variable.
 
 		// Verify if Timer should be ON
 		if (timerOnSetting)
 		{
-			TimerCountDown();
+			TimerCountDown();	// Call the TimerCountDown function to decrement the time every second.
 		}
+
 		// Pause clock hold A and B, Only works with screen ON
 		if (arduboy.pressed(A_BUTTON) && arduboy.pressed(B_BUTTON) && diplayOnOff && !alarmSetting && !timerSetting)
 		{
@@ -229,56 +228,59 @@ void loop()
 			return;
 		}
 		
-		s++;
+		s++;	// Increase Second by 1
 
 	}
 
+	// Verify if its time for next frame if not exit the loop.
 	if (!arduboy.nextFrame())
 	{
 		return;
 	}
 
-	
+	arduboy.clear();	// Clear display buffer at the beginning of each frame
+	arduboy.setTextSize(1);	// Set the font size back to default once a frame starts anew
 
-	// Calculate time and store it.
-	clock();
+	clock();	// Call Function, Calculate time and store it
 
-	// Verify if Alarm is on and start playing Music and turn lights on if it is.
+	// Verify if Alarm is on and start playing Music
 	if (sA == s && mA == m && hA == h && ampmA == ampm && alarmOnSetting)
 	{
-		ardtune.playScore(score);
-		alarmOnSetting = false;
+		ardtune.playScore(score);	// Play the stored score
+		alarmOnSetting = false;	// Turn off the Alarm setting to OFF
 	}
 	
-	
-	
+	ShowDisplay();	// Call function and verify if the used is trying to turn ON or OFF the display
+
 	// Exit loop function if screen should be OFF
-	ShowDisplay();
 	if (!diplayOnOff)
 	{
 		return;
 	}
 	
-	HeldLeftButton();
-	HeldRightButton();
+	HeldLeftButton();	// Call function and verify if user want to turn the Alarm ON or OFF
+	HeldRightButton();	// Call function and verify if user want to Start or Stop the Timer
 
+	// Change to the Alarm setting Screen
 	if (HeldDownButton() || alarmSetting)
 	{
-		arduboy.clear();
-		DisplayAlarm();		
+		arduboy.clear();	// Clear the display buffer
+		DisplayAlarm();		// Call the function to show the Alarm setting screen
 	}
+	// Change to the Timer setting Screen
 	else if (HeldUpButton() || timerSetting)
 	{
-		arduboy.clear();
-		DisplayTimer();
+		arduboy.clear();	// Clear the display buffer
+		DisplayTimer();		// Call the function to show the Timer setting screen
 	}
+	// Show main Screen if no other Screen are called
 	else
 	{	
-		DisplayClock();
+		DisplayMain();	// Call function to show the Main screen
 	}
 
 	
-	arduboy.display();
+	arduboy.display();	// Display on screen what is currently in the disply buffer
 }
 
 // Calculate time and store it.
@@ -288,44 +290,51 @@ void clock()
 	// Frame counter used for Pause and AM/PM swap
 	if (sc == 0)
 	{
-		sc = frameRate;
+		sc = frameRate;	// Reset the varible back to default frame rate
 	}
 	else
 	{
-		sc--;
+		sc--;	// Decrement varible by 1
 	}
 
 	// Clock incrementation
 	// Add 1 min every 60 seconds and reset second to 0
 	if (s == 60)
 	{
-		s = 0;
-		m++;
+		s = 0;	// Reset second
+		m++;	// Increment minute by 1
 	}
+
 	// Add 1 hour every 60 minutes and reset minute to 0
 	if (m == 60 && s == 0)
 	{
-		m = 0;
-		h++;
+		m = 0;	// Reset minute
+		h++;	// Increment hour by 1
 	}
+
 	// Turn over clock 
+	// If the clock is set to 24h, turns the clock over once the hour hits 24.
 	if (h == 24 && m == 0 && s == 0 && !clockType && sc == frameRate)
 	{
-		h = 0;
-		ampm = true;
+		h = 0;	// Set hours to 0
+		ampm = true;	// Set the clock to AM
 	}
+	// Turn to PM less than a second before it turns to 12:00 PM so the Alarm detects PM properly
 	else if (h == 11 && m == 59 && s == 59 && clockType && ampm && sc == frameRate)
 	{
 		ampm = false;
 	}
+	// Turn to AM less than a second before it turns to 12:00 AM so the Alarm detects AM properly
 	else if (h == 11 && m == 59 && s == 59 && clockType && !ampm && sc == frameRate)
 	{
 		ampm = true;
 	}
+	// If the clock is set to 12h turn to 1 instead of 13.
 	if (h > 12 && m == 0 && s == 0 && clockType)
 	{
 		h = 1;
 	}
+	// If the clock is set 24h turn to PM once hours turn to 12
 	if (h >= 12 && !clockType)
 	{
 		ampm = false;
@@ -339,31 +348,31 @@ void ShowDisplay()
 	// Press LEFT and RIGHT to turn screen OFF, clock still run in the background.
 	if (arduboy.pressed(LEFT_BUTTON) && arduboy.pressed(RIGHT_BUTTON) && arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(UP_BUTTON) && arduboy.notPressed(DOWN_BUTTON))
 	{
-		arduboy.clear();
-		arduboy.display();
-		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);
-		diplayOnOff = false;
-		startCounting = true;
-		alarmSetting = false;
-		timerSetting = false;
+		arduboy.clear();	// Clear display buff
+		arduboy.display();	// Show what is on the diplay buffer (nothing since it just go cleared)
+		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);	// Turn off LEDs if any were on while transitioning
+		diplayOnOff = false;	// Set the variable that detects Display to be OFF
+		startCounting = true;	// Reset the variable that detects how long a button has be held
+		alarmSetting = false;	// Turn off the Alarm screen variable so when the user turn the screen back ON its back to Main screen
+		timerSetting = false;	// Turn off the Timer screen variable so when the user turn the screen back ON its back to Main screen
 		
 
 	}
 	// Press UP and DOWN to turn screen ON and display clock.
 	else if (arduboy.pressed(UP_BUTTON) && arduboy.pressed(DOWN_BUTTON) && arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(LEFT_BUTTON) && arduboy.notPressed(RIGHT_BUTTON))
 	{
-		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);
-		diplayOnOff = true;
+		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);	// Turn off LEDs if any were on while transitioning
+		diplayOnOff = true;	// Set the variable that detects Display to be ON
 	}
 }
 
 // Modify time sA=Seconds, mA=Minutes, hA=Hours, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'SetTimer' TRUE=Setting Timer
 int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 {
-	sAv = sAA;
-	mAv = mAA;
-	hAv = hAA;
-	static int adjT[3];
+	sAv = sAA;	// Set the received varible while calling the function to a public one so it can be used outside this function
+	mAv = mAA;	// Set the received varible while calling the function to a public one so it can be used outside this function
+	hAv = hAA;	// Set the received varible while calling the function to a public one so it can be used outside this function
+	static int adjT[3];	// Create a array to return 3 variable from this function
 	
 	// Disable changing clocktype if your are setting up Timer.
 	if (!SetTimer)
@@ -371,11 +380,14 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 		// Press RIGHT and UP to set clock type to 24h
 		if (arduboy.pressed(RIGHT_BUTTON) && arduboy.pressed(UP_BUTTON) && clockType&& arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(LEFT_BUTTON) && arduboy.notPressed(DOWN_BUTTON))
 		{
-			clockType = false;
+			clockType = false;	// Change the clock type to 24h
+
+			// Verify the time for the Main clock and also the Alarm clock and change the time accordingly
 			// Set Hours according to AM PM
 			if (hAv == 12)
 			{
-				if (ClockOrAlarm && ampm)
+				// Change hours to 0 if its 12 AM
+				if (ClockOrAlarm && ampm) // Verify Main clock
 				{
 					hAv = 0;
 				}
@@ -384,7 +396,7 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 					h = 0;
 				}
 
-				if (!ClockOrAlarm && ampmA)
+				if (!ClockOrAlarm && ampmA)	// Verify Alarm clock
 				{
 					hAv = 0;
 				}
@@ -393,9 +405,10 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 					hA = 0;
 				}
 			}
+			// Add 12 to the hour if its PM
 			else if (hAv != 12)
 			{
-				if (ClockOrAlarm && !ampm)
+				if (ClockOrAlarm && !ampm)	// Verify Main clock
 				{
 					hAv += 12;
 				}
@@ -403,8 +416,12 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 				{
 					h += 12;
 				}
+				else if (h == 12 && ampm)
+				{
+					h = 0;
+				}
 
-				if (!ClockOrAlarm && !ampmA)
+				if (!ClockOrAlarm && !ampmA)	// Verify Alarm clock
 				{
 					hAv += 12;
 				}
@@ -412,16 +429,23 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 				{
 					hA += 12;
 				}
+				else if (hA == 12 && ampmA)
+				{
+					hA = 0;
+				}
 			}
 		}
 		// Press LEFT and DOWN to set clock type to 12h AM/PM
 		if (arduboy.pressed(LEFT_BUTTON) && arduboy.pressed(DOWN_BUTTON) && !clockType&& arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(RIGHT_BUTTON) && arduboy.notPressed(UP_BUTTON))
 		{
-			clockType = true;
-			// Set AM PM according to current time
-			if (hAv >= 12)
+			clockType = true;	// Change the clock type to 12h
+
+			// Verify the time for the Main clock and also the Alarm clock and change the time accordingly
+			// Set Hours according to AM PM
+			if (hAv > 12)
 			{
-				if (ClockOrAlarm)
+				// If the hours is is above 12 therefore PM, reduce the hours by 12 and make sure the AM/PM variable is properly set to PM
+				if (ClockOrAlarm)	// Verify Main clock
 				{
 					hAv -= 12;
 					ampm = false;
@@ -432,7 +456,7 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 					ampm = false;
 				}
 
-				if (!ClockOrAlarm)
+				if (!ClockOrAlarm)	// Verify Alarm clock
 				{
 					hAv -= 12;
 					ampmA = false;
@@ -444,44 +468,50 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 				}
 
 			}
-			else if (hAv != 0)
+			// Check if its bettwen 0 and 12, then make sure the AM/PM variable is properly set to AM
+			else if (hAv != 0 && hAv < 12)
 			{
-				if (ClockOrAlarm)
+				if (ClockOrAlarm)	// Verify Main clock
 				{
 					ampm = true;
 				}
-				else if (h < 12)
+				else if (h != 0 && hAv < 12)
 				{
 					ampm = true;
 				}
 
-				if (!ClockOrAlarm)
+				if (!ClockOrAlarm)	// Verify Alarm clock
 				{
 					ampmA = true;
 				}	
-				else if (hA < 12)
+				else if (hA != 0 && hAv < 12)
 				{
 					ampmA = true;
 				}
 			}
+			// Check if the hour is 0 therefore change it to 12
 			if (hAv == 0)
 			{
-				if (ClockOrAlarm)
+				if (ClockOrAlarm)	// Verify Main clock
 				{
 					hAv = 12;
+					ampm = true;
 				}
 				else if (h == 0)
 				{
 					h = 12;
+					ampm = true;
 				}
 
-				if (!ClockOrAlarm)
+				if (!ClockOrAlarm)	// Verify Alarm clock
 				{
 					hAv = 12;
+					ampmA = true;
 				}
 				else if (hA == 0)
 				{
 					hA = 12;
+					ampmA = true;
 				}
 			}
 		}
@@ -490,41 +520,42 @@ int * AdjustTime(int sAA, int mAA, int hAA, bool ClockOrAlarm, bool SetTimer)
 	// Adjust Hours hold A, press UP or DOWN
 	if (arduboy.pressed(A_BUTTON) && arduboy.pressed(UP_BUTTON) && arduboy.notPressed(B_BUTTON))
 	{
-		HourTurn(true, ClockOrAlarm, SetTimer);
+		HourTurn(true, ClockOrAlarm, SetTimer);	// Call the function to change the hours, (Increment)
 	}
 	else if (arduboy.pressed(A_BUTTON) && arduboy.pressed(DOWN_BUTTON) && arduboy.notPressed(B_BUTTON))
 	{
-		HourTurn(false, ClockOrAlarm, SetTimer);
+		HourTurn(false, ClockOrAlarm, SetTimer);	// Call the function to change the hours, (Decrement)
 	}
 	// Adjust Minutes hold B, press UP or DOWN
 	else if (arduboy.pressed(B_BUTTON) && arduboy.pressed(UP_BUTTON) && arduboy.notPressed(A_BUTTON))
 	{
-		MinuteTurn(true, ClockOrAlarm, SetTimer);
+		MinuteTurn(true, ClockOrAlarm, SetTimer);	// Call the function to change the minutes, (Increment)
 	}
 	else if (arduboy.pressed(B_BUTTON) && arduboy.pressed(DOWN_BUTTON) && arduboy.notPressed(A_BUTTON))
 	{
-		MinuteTurn(false, ClockOrAlarm, SetTimer);
+		MinuteTurn(false, ClockOrAlarm, SetTimer);	// Call the function to change the minutes, (Decrement)
 	}
 	// Adjust Seconds hold A and B, press UP or DOWN
 	else if (arduboy.pressed(A_BUTTON) && arduboy.pressed(B_BUTTON) && arduboy.pressed(UP_BUTTON))
 	{
-		SecondTurn(true, ClockOrAlarm, SetTimer);
+		SecondTurn(true, ClockOrAlarm, SetTimer);	// Call the function to change the seconds, (Increment)
 	}
 	else if (arduboy.pressed(A_BUTTON) && arduboy.pressed(B_BUTTON) && arduboy.pressed(DOWN_BUTTON))
 	{
-		SecondTurn(false, ClockOrAlarm, SetTimer);
+		SecondTurn(false, ClockOrAlarm, SetTimer);	// Call the function to change the seconds, (Decrement)
 	}
 
-	adjT[0] = sAv;
-	adjT[1] = mAv;
-	adjT[2] = hAv;
+	adjT[0] = sAv;	// Set the modified seconds to the array
+	adjT[1] = mAv;	// Set the modified minutes to the array
+	adjT[2] = hAv;	// Set the modified hours to the array
 
-	return adjT;
+	return adjT;	// Return the array out of this function 
 }
 
 // Swap AM/PM depending of which time your are adjusting, 'ClockOrAlarm' TRUE=Clock, FALSE=Alarm
 boolean AmPmSwap(bool ClockOrAlarm) 
-{
+{	
+	// Change Main clock AM/PM variable
 	if (ClockOrAlarm)
 	{
 		if (ampm)
@@ -536,6 +567,7 @@ boolean AmPmSwap(bool ClockOrAlarm)
 			ampm = true;
 		}
 	}
+	// Change Alarm clock AM/PM variable
 	else if (!ClockOrAlarm)
 	{
 		if (ampmA)
@@ -552,43 +584,56 @@ boolean AmPmSwap(bool ClockOrAlarm)
 // 'changeH' Increment(TRUE) or Decrement(FALSE) hours, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'setTimer' TRUE=Setting Timer
 int HourTurn(bool changeH, bool ClockOrAlarm, bool setTimer)
 {
+	// Enter the increment section
 	if (changeH)
 	{
-		hAv++;
+		hAv++;	// Increment hours by 1
+		// Disregard if user is setting up the timer
 		if (!setTimer)
 		{
+			// Turn the hours from 13 to 1 if the clock type is 12h
 			if (clockType && hAv > 12)
 			{
 				hAv = 1;
 			}
-			else if (clockType && hAv == 12)
+			// Swap AM/PM if hour is 12 and the clock type is 24h
+			else if (hAv == 12)
 			{
 				AmPmSwap(ClockOrAlarm);
 			}
+			// Swap AM/PM and change from 24 to 0 if clock type is 24h
 			else if (!clockType && hAv == 24)
 			{
 				hAv = 0;
+				AmPmSwap(ClockOrAlarm);
 			}
 		}
 	}
+	// Enter the decrement section
 	else
 	{
-		hAv--;
+		hAv--;	// Decrement hours by 1
+		// Disregard if user is setting up the timer
 		if (!setTimer)
 		{
+			// Turn the hours from 0 to 12 if the clock type is 12h
 			if (clockType && hAv < 1)
 			{
 				hAv = 12;
 			}
-			else if (clockType && hAv == 11)
+			// Swap AM/PM if hour goes down to 11
+			else if (hAv == 11)
 			{
 				AmPmSwap(ClockOrAlarm);
 			}
+			// Turn the hours from -1 to 23 if the clock type is 24h
 			else if (!clockType && hAv < 0)
 			{
 				hAv = 23;
+				AmPmSwap(ClockOrAlarm);
 			}
 		}
+		// If user is setting up Timer, block hours at 0
 		else
 		{
 			if (hAv < 0)
@@ -602,15 +647,18 @@ int HourTurn(bool changeH, bool ClockOrAlarm, bool setTimer)
 // 'changeM' Increment(TRUE) or Decrement(FALSE) minutes, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'setTimer' TRUE=Setting Timer
 int MinuteTurn(bool changeM, bool ClockOrAlarm, bool setTimer)
 {
+	// Enter the increment section
 	if (changeM)
 	{
-		mAv++;
+		mAv++;	// Increment minutes by 1
+		// Return the minutes to 0 if it goes above 59
 		if (mAv > 59)
 		{
+			// Disregard affecting hours if user is setting up Timer
 			if (!setTimer)
 			{
 				mAv = 0;
-				HourTurn(true, ClockOrAlarm, setTimer);
+				HourTurn(true, ClockOrAlarm, setTimer);	// Turn the Hours
 			}
 			else
 			{
@@ -619,15 +667,18 @@ int MinuteTurn(bool changeM, bool ClockOrAlarm, bool setTimer)
 			
 		}
 	}
+	// Enter the decrement section
 	else
 	{
-		mAv--;
+		mAv--;	// Decrement minutes by 1
+		// Return the minutes to 59 if it goes under 0
 		if (mAv < 0)
 		{
+			// Disregard affecting hours if user is setting up Timer
 			if (!setTimer)
 			{
 				mAv = 59;
-				HourTurn(false, ClockOrAlarm, setTimer);
+				HourTurn(false, ClockOrAlarm, setTimer);	// Turn the Hours
 			}
 			else
 			{
@@ -641,15 +692,18 @@ int MinuteTurn(bool changeM, bool ClockOrAlarm, bool setTimer)
 // 'changeS' Increment(TRUE) or Decrement(FALSE) seconds, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'setTimer' TRUE=Setting Timer
 int SecondTurn(bool changeS, bool ClockOrAlarm, bool setTimer)
 {
+	// Enter the increment section
 	if (changeS)
 	{
-		sAv++;
+		sAv++;	// Increment seconds by 1
+		// Return the seconds to 0 if it goes above 59
 		if (sAv > 59)
 		{
+			// Disregard affecting minutes if user is setting up Timer
 			if (!setTimer)
 			{
 				sAv = 0;
-				MinuteTurn(true, ClockOrAlarm, setTimer);
+				MinuteTurn(true, ClockOrAlarm, setTimer);	// Turn over minutes
 			}
 			else
 			{
@@ -658,15 +712,18 @@ int SecondTurn(bool changeS, bool ClockOrAlarm, bool setTimer)
 			
 		}
 	}
+	// Enter the decrement section
 	else
 	{
-		sAv--;
+		sAv--;	// Decrement seconds by 1
+		// Return the seconds to 59 if it goes under 0
 		if (sAv < 0)
 		{
+			// Disregard affecting minutes if user is setting up Timer
 			if (!setTimer)
 			{
 				sAv = 59;
-				MinuteTurn(false, ClockOrAlarm, setTimer);
+				MinuteTurn(false, ClockOrAlarm, setTimer);	// Turn over minutes
 			}
 			else
 			{
@@ -742,7 +799,7 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer)
 	return hourD + hD + clockS + minD + mD + clockS + secD + sD + ampmText;	// Create Display string
 }
 
-// Isolate a button, return true when all the other button are not press except the one you've chosen
+// Verify if no button has been pressed and return true if it is the case
 boolean NoButton()
 {
 	if (arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(UP_BUTTON) && arduboy.notPressed(DOWN_BUTTON) && arduboy.notPressed(LEFT_BUTTON) && arduboy.notPressed(RIGHT_BUTTON))
@@ -803,13 +860,16 @@ boolean SingleButton(String chosenButton)
 // Change to ALARM SETTINGS, Detect for down button held long enough
 boolean HeldDownButton()
 {
+	// Check if proper buttons has been pressed and the user is not at the Timer screen
 	if (arduboy.pressed(DOWN_BUTTON) && SingleButton("DOWN") && !timerSetting)
 	{
+		// Check if proper time has past while the button is held
 		if (millis() >= timeHeld && !startCounting && buttonHeld)
 		{
-			buttonHeld = false;
-			timeHeld = 0;
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);
+			buttonHeld = false;	// Reset the variable
+			timeHeld = 0;	// Reset the variable
+			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
+			//	Swap between Main and Alarm screen
 			if (alarmSetting)
 			{
 				alarmSetting = false;
@@ -821,18 +881,18 @@ boolean HeldDownButton()
 				return true;
 			}				
 		}
+		// Start the count down for how long the button has been held
 		if (startCounting)
 		{
-			timeHeld = millis() + heldTime;
-			startCounting = false;
-			arduboy.digitalWriteRGB(RGB_ON, RGB_OFF, RGB_OFF);
+			timeHeld = millis() + heldTime;	// Set the varible for the counter with how long button should be held as per the variable
+			startCounting = false;	// Set variable to indicate the countdown just started
+			arduboy.digitalWriteRGB(RGB_ON, RGB_OFF, RGB_OFF);	// Turn on light to indicate the button is being held
 		}
 	}
+	// Check if no button has been pressed
 	if (NoButton())
 	{
-		buttonHeld = true;
-		startCounting = true;
-		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);
+		ResetButtonHeldCounter();	// Call function to reset ligth and multiple variables
 		return false;
 	}
 }
@@ -840,13 +900,16 @@ boolean HeldDownButton()
 //Change to TIMER SETTINGS, Detect for DOWN button held long enough
 boolean HeldUpButton()
 {
+	// Check if proper buttons has been pressed and the user is not the Alarm screen
 	if (arduboy.pressed(UP_BUTTON) && SingleButton("UP") && !alarmSetting)
 	{
+		// Check if proper time has past while the button is held
 		if (millis() >= timeHeld && !startCounting && buttonHeld)
 		{
-			buttonHeld = false;
-			timeHeld = 0;
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);
+			buttonHeld = false;	// Reset the variable
+			timeHeld = 0;	// Reset the variable
+			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
+			//	Swap between Main and Timer screen
 			if (timerSetting)
 			{
 				timerSetting = false;
@@ -858,18 +921,18 @@ boolean HeldUpButton()
 				return true;
 			}
 		}
+		// Start the count down for how long the button has been held
 		if (startCounting)
 		{
-			timeHeld = millis() + heldTime;
-			startCounting = false;
-			arduboy.digitalWriteRGB(RGB_ON, RGB_ON, RGB_OFF);
+			timeHeld = millis() + heldTime;	// Set the varible for the counter with how long button should be held as per the variable
+			startCounting = false;	// Set variable to indicate the countdown just started
+			arduboy.digitalWriteRGB(RGB_ON, RGB_ON, RGB_OFF);	// Turn on light to indicate the button is being held
 		}
 	}
+	// Check if no button has been pressed
 	if (NoButton())
 	{
-		buttonHeld = true;
-		startCounting = true;
-		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);
+		ResetButtonHeldCounter();	// Call function to reset ligth and multiple variables
 		return false;
 	}
 }
@@ -877,131 +940,168 @@ boolean HeldUpButton()
 // SET to ALARM ON or OFF, Detect for DOWN button held long enough
 boolean HeldLeftButton()
 {
-	if (arduboy.pressed(LEFT_BUTTON) && SingleButton("LEFT") && !timerSetting)
+	// Check if proper buttons has been pressed 
+	if (arduboy.pressed(LEFT_BUTTON) && SingleButton("LEFT"))
 	{
+		// Check if music is playing
 		if (ardtune.playing())
 		{
-			ardtune.stopScore();
+			ardtune.stopScore();	// Turn off music
 		}
-		if (millis() >= timeHeld && !startCounting && buttonHeld)
+
+		// Count if user is not at the Timer screen
+		if (!timerSetting)
 		{
-			buttonHeld = false;
-			timeHeld = 0;
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);
-			if (alarmOnSetting)
+			// Check if proper time has past while the button is held
+			if (millis() >= timeHeld && !startCounting && buttonHeld)
 			{
-				alarmOnSetting = false;
-				return false;
+				buttonHeld = false;	// Reset the variable
+				timeHeld = 0;	// Reset the variable
+				arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
+				//	Swap between Alarm ON or OFF
+				if (alarmOnSetting)
+				{
+					alarmOnSetting = false;	// Set Alarm OFF
+					return false;
+				}
+				else
+				{
+					alarmOnSetting = true;	// Set Alarm ON
+					alarmSetting = false;	// Exit Alarm setting screen
+					return true;
+				}
 			}
-			else
+			// Start the count down for how long the button has been held
+			if (startCounting)
 			{
-				alarmOnSetting = true;
-				alarmSetting = false;
-				return true;
+				timeHeld = millis() + heldTime;	// Set the varible for the counter with how long button should be held as per 'heldTime'
+				startCounting = false;	// Set variable to indicate the countdown just started
+				arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_ON);	// Turn on light to indicate the button is being held
 			}
-		}
-		if (startCounting)
-		{
-			timeHeld = millis() + heldTime;
-			startCounting = false;
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_ON);
 		}
 	}
+	// Check if no button has been pressed
 	if (NoButton())
 	{
-		buttonHeld = true;
-		startCounting = true;
-		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);
-		//return false; removed for alarm on setting to stay even if button is released.
+		ResetButtonHeldCounter();	// Call function to reset ligth and multiple variables
+		return false;
 	}
 }
 
 // Set START OR STOP TIMER, Detect for down button held long enough
 boolean HeldRightButton()
 {
-	
-	if (arduboy.pressed(RIGHT_BUTTON) && SingleButton("RIGHT") && !alarmSetting)
+	// Check if proper buttons has been pressed and the user is not at the main screen
+	if (arduboy.pressed(RIGHT_BUTTON) && SingleButton("RIGHT"))
 	{
+		// Check if music is playing
 		if (ardtune.playing())
 		{
-			ardtune.stopScore();
+			ardtune.stopScore();	// Turn off music
 		}
-		if (millis() >= timeHeld && !startCounting && buttonHeld)
+
+		// Count if user is not at the Alarm screen
+		if (!alarmSetting)
 		{
-			buttonHeld = false;
-			timeHeld = 0;
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);
-			if (timerOnSetting)
+			// Check if proper time has past while the button is held
+			if (millis() >= timeHeld && !startCounting && buttonHeld)
 			{
-				timerOnSetting = false;
-				return false;
+				buttonHeld = false;	// Reset the variable
+				timeHeld = 0;	// Reset the variable
+				arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
+				//	Swap Timer status, Running or Not
+				if (timerOnSetting)
+				{
+					timerOnSetting = false;	// Stop timer
+					return false;
+				}
+				else
+				{
+					timerOnSetting = true;	// Start timer
+					timerSetting = false;	// Exit Timer setting screen
+					return true;
+				}
 			}
-			else
+			// Start the count down for how long the button has been held
+			if (startCounting)
 			{
-				timerOnSetting = true;
-				timerSetting = false;
-				return true;
+				timeHeld = millis() + heldTime;	// Set the varible for the counter with how long button should be held as per 'heldTime'
+				startCounting = false;	// Set variable to indicate the countdown just started
+				arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_ON);	// Turn on light to indicate the button is being held
 			}
-		}
-		if (startCounting)
-		{
-			timeHeld = millis() + heldTime;
-			startCounting = false;
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_ON);
 		}
 	}
+	// Check if no button has been pressed
 	if (NoButton())
 	{
-		buttonHeld = true;
-		startCounting = true;
-		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);
+		ResetButtonHeldCounter();	// Call function to reset ligth and multiple variables
 		return false;
 	}
 }
 
-//  Display the clock on screen
-void DisplayClock()
+//  Display the Main screen
+void DisplayMain()
 {
+	// Display Timer if running
 	if (timerOnSetting)
 	{
-		arduboy.setCursor(locX, locY + 21);
-		arduboy.print("Hold RIGHT to stop");
-		arduboy.setCursor(locX + 32, locY + 31);
-		arduboy.print(CreateDisplayText(sT, mT, hT, false, true));
+		arduboy.setCursor(locX, locY + 21);	// Set location for text
+		arduboy.print("Hold RIGHT to stop");	// Add to display buffer
+		arduboy.setCursor(locX + 32, locY + 31);	// Set location for Timer clock
+		arduboy.print(CreateDisplayText(sT, mT, hT, false, true));	// Add to display buffer by calling function to create the time text
 	}
+	// Display how to access Timer screen
 	else
 	{
-		arduboy.setCursor(locX, locY + 21);
-		arduboy.print("Hold UP for Timer");
+		arduboy.setCursor(locX, locY + 21);	// Set location for text
+		arduboy.print("Hold UP for Timer");	// Add to display buffer
 	}
+
+	// Display Alarm if its ON
 	if (alarmOnSetting)
 	{
-		arduboy.setCursor(locX, locY + 41);
-		arduboy.print("Hold LEFT to turn OFF");
-		arduboy.setCursor(locX + 32, locY + 51);
-		arduboy.print(CreateDisplayText(sA, mA, hA, false, false));
+		arduboy.setCursor(locX, locY + 41);	// Set location for text
+		arduboy.print("Hold LEFT to turn OFF");	// Add to display buffer
+		arduboy.setCursor(locX + 32, locY + 51);	// Set location for Alarm clock
+		arduboy.print(CreateDisplayText(sA, mA, hA, false, false));	// Add to display buffer by calling function to create the time text
 	}
+	// Diplay how to access Alarm screen
 	else
 	{
-		arduboy.setCursor(locX, locY + 41);
-		arduboy.print("Hold DOWN for Alarm");
+		arduboy.setCursor(locX, locY + 41);	// Set location for text
+		arduboy.print("Hold DOWN for Alarm");	// Add to display buffer
 	}
 	
 
-	arrD = AdjustTime(s, m, h, true, false);
-	s = *(arrD);
-	m = *(arrD + 1);
-	h = *(arrD + 2);
-	arduboy.setTextSize(2);
+	arrD = AdjustTime(s, m, h, true, false);	// Call funtion to change time if user choose to
+	s = *(arrD);	// Extract seconds from array as per previous function
+	m = *(arrD + 1);	// Extract minutes from array as per previous function
+	h = *(arrD + 2);	// Extract hours from array as per previous function
+	arduboy.setTextSize(2);	// Increase font size
 	arduboy.setCursor(locX + 2, locY);	// Set location for clock
-	clockText = CreateDisplayText(s, m, h, true, false);
+	clockText = CreateDisplayText(s, m, h, true, false);	// Add to display buffer by calling function to create the time text
 	arduboy.print(clockText); // Print clock
+
+
+	/* Section used for debugging
+	arduboy.setTextSize(1);
+	arduboy.setCursor(locX + 2, locY+50);
+	if (ampm)
+	{
+		arduboy.print("AM");
+	}
+	else
+	{
+		arduboy.print("PM");
+	}
+	*/
 }
 
-// Display the Alarm setting on screen.
+// Display the Alarm setting screen
 void DisplayAlarm()
 {
-	String alarmStatusText;
+	String alarmStatusText;	// Used for displaying if Alarm if ON or OFF
+	// Verify Alarm status and set string accordingly
 	if (alarmOnSetting)
 	{
 
@@ -1023,21 +1123,37 @@ void DisplayAlarm()
 	}
 
 	arduboy.setCursor(0, 0);	// Print clock type top left corner
-	arduboy.print(clockTypeText + "  ALARM SETTING\n\r" + alarmStatusText);
+	arduboy.print(clockTypeText + "  ALARM SETTING\n\r" + alarmStatusText);	// Add to display buffer 
 
-	arduboy.setCursor(locX + 2, locY + 32);
-	arrD = AdjustTime(sA, mA, hA, false, false);
-	sA = *(arrD);
-	mA = *(arrD + 1);
-	hA = *(arrD + 2);
-	arduboy.setTextSize(2);
-	arduboy.print(CreateDisplayText(sA, mA, hA, false, false));
+	arduboy.setCursor(locX + 2, locY + 32);	// Set location for text
+	arrD = AdjustTime(sA, mA, hA, false, false);	// Call funtion to change time if user choose to
+	sA = *(arrD);	// Extract seconds from array as per previous function
+	mA = *(arrD + 1);	// Extract minutes from array as per previous function
+	hA = *(arrD + 2);	// Extract hours from array as per previous function
+	arduboy.setTextSize(2);	// Increase font size
+	arduboy.print(CreateDisplayText(sA, mA, hA, false, false));	// Add to display buffer by calling function to create the time text
+	arduboy.setTextSize(1);	// Reset font size
+
+	/* Section used for debugging
 	arduboy.setTextSize(1);
+	arduboy.setCursor(locX + 2, locY+50);
+	if (ampmA)
+	{
+	arduboy.print("AM");
+	}
+	else
+	{
+	arduboy.print("PM");
+	}
+	*/
+	
 }
 
+// Display the Timer setting screen
 void DisplayTimer()
 {
-	String timerStatusText;
+	String timerStatusText;	// Used for displaying if Timer if Runnig or OFF
+	// Verify Timer status and set string accordingly
 	if (timerOnSetting)
 	{
 		timerStatusText = " Hold RIGHT to Stop Timer";
@@ -1047,49 +1163,61 @@ void DisplayTimer()
 		timerStatusText = " Hold RIGHT to Start";
 	}
 
-	arduboy.setCursor(0, 0);
-	arduboy.print(" TIMER SETTINGS\n\r" + timerStatusText);
+	arduboy.setCursor(0, 0);	// Set location for text
+	arduboy.print(" TIMER SETTINGS\n\r" + timerStatusText);	// Add to display buffer
 
-	
+	// Check if timer is not running, User cannot change the timer if it is currently running
 	if (!timerOnSetting)
 	{
-		arrD = AdjustTime(sT, mT, hT, false, true);
-		sT = *(arrD);
-		mT = *(arrD + 1);
-		hT = *(arrD + 2);
+		arrD = AdjustTime(sT, mT, hT, false, true);	// Call funtion to change time if user choose to
+		sT = *(arrD);	// Extract seconds from array as per previous function
+		mT = *(arrD + 1);	// Extract minutes from array as per previous function
+		hT = *(arrD + 2);	// Extract hours from array as per previous function
 	}
-	arduboy.setCursor(locX + 7, locY + 32);
-	arduboy.setTextSize(2);
-	arduboy.print(CreateDisplayText(sT, mT, hT, false, true));
-	arduboy.setTextSize(1);
+	arduboy.setCursor(locX + 7, locY + 32);	// Set location for text
+	arduboy.setTextSize(2);	// Increase font size
+	arduboy.print(CreateDisplayText(sT, mT, hT, false, true));	// Add to display buffer by calling function to create the time text
+	arduboy.setTextSize(1);	// Reset font size
 }
 
-// If 'timerOnSetting' is TRUE the time will start counting down.
+// At every calls the Timer decrement.
 void TimerCountDown()
 {
-	sT--;
+	sT--;	// Decrement Timer's second by 1
 
-	// Timer Decrementation
+	// Check if timer second goes below 0
 	if (sT < 0)
 	{
+		// Check if minutes are at 0
 		if (mT != 0)
 		{
-			sT = 59;
-			mT--;
+			sT = 59;	// Reset seconds at the top
+			mT--;	// Decrement Timer's minutes by 1
 		}
+		// Check if hours are at 0
 		else if(hT != 0)
 		{
-			sT = 59;
-			mT = 59;
-			hT--;
+			sT = 59;	// Reset seconds at the top
+			mT = 59;	// Reset minutes at the top
+			hT--;	// Decrement Timer's hours by 1
 
 		}
+		// So if everything is false that means the timer hit the end
 		else
 		{
-			sT = 0;
-			ardtune.playScore(score);
-			timerOnSetting = false;
+			sT = 0;	// Reset seconds
+			ardtune.playScore(score);	// Start the music
+			timerOnSetting = false;	// Set Timer status to OFF
 		}
 		
 	}
 }
+
+// Reset the counter and turn off light when user stop holding a button.
+void ResetButtonHeldCounter()
+{
+	buttonHeld = true;	// Reset variable confirming a button is being held
+	startCounting = true;	// Set variable to indicate to reset the countdown
+	arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);	// Turn off lights when no button is being held
+}
+
