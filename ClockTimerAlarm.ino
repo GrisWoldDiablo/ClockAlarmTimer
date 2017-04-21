@@ -238,7 +238,7 @@ void loop()
 	if (millis() >= timeOffsetCalc)
 	{
 		timeOffsetCalc += timeOffsetMillis;
-		s++;
+		s--;
 	}
 
 
