@@ -49,8 +49,10 @@ ArduboyPlaytune ardtune(arduboy.audio.enabled);
 int frameRate = 15;	// Frame rate, default 15 to save battery
 int sc = frameRate; // Frame counter used for Pause and AM/PM swap
 
-long milSec = 1000;	// Secound counter, 1 second = 1000 milliseconds
+long milSec = 1000;	// Second counter, 1 second = 1000 milliseconds
 long fullSec = 1000;// Incrematation of second counter
+long timeOffsetCalc = 1112956;	// Time offset variable for calculation thats is exactly 18 minutes, 32 seconds, 956 milliseconds
+long timeOffsetMillis = 1112956;	// Milliseconds offset for time accuracy
 
 String clockText;	// Text variable for Clock
 String clockS = ":";// Seperator between clock digit
@@ -231,6 +233,14 @@ void loop()
 		s++;	// Increase Second by 1
 
 	}
+
+	// Time Offset calculation for clock accuracy
+	if (millis() >= timeOffsetCalc)
+	{
+		timeOffsetCalc += timeOffsetMillis;
+		s++;
+	}
+
 
 	// Verify if its time for next frame if not exit the loop.
 	if (!arduboy.nextFrame())
