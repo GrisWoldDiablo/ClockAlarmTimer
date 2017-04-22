@@ -51,8 +51,11 @@ int sc = frameRate; // Frame counter used for Pause and AM/PM swap
 
 long milSec = 1000;	// Second counter, 1 second = 1000 milliseconds
 long fullSec = 1000;// Incrematation of second counter
-long timeOffsetCalc = 1112956;	// Time offset variable for calculation thats is exactly 18 minutes, 32 seconds, 956 milliseconds
-long timeOffsetMillis = 1112956;	// Milliseconds offset for time accuracy
+
+/* OFFSET currently not working, Need to create a function to tweek the clock per device.
+long timeOffsetCalc = 0;	// Time offset variable for calculation
+long timeOffsetMillis = 18;	// 18 Milliseconds Offset every 10 seconds for time accuracy
+*/
 
 String clockText;	// Text variable for Clock
 String clockS = ":";// Seperator between clock digit
@@ -223,6 +226,15 @@ void loop()
 			TimerCountDown();	// Call the TimerCountDown function to decrement the time every second.
 		}
 
+		/* Function to be revisited. currently not effective.
+		// Time Offset calculation for clock accuracy, every 10 sec add the Offset
+		timeOffsetCalc++;
+		if (timeOffsetCalc == 10)
+		{
+			timeOffsetCalc = 0; // Reset calculation variable
+			milSec += timeOffsetMillis;	// Add the Offset to delay time
+		}*/
+
 		// Pause clock hold A and B, Only works with screen ON
 		if (arduboy.pressed(A_BUTTON) && arduboy.pressed(B_BUTTON) && diplayOnOff && !alarmSetting && !timerSetting)
 		{
@@ -231,16 +243,8 @@ void loop()
 		}
 		
 		s++;	// Increase Second by 1
-
 	}
-
-	// Time Offset calculation for clock accuracy
-	if (millis() >= timeOffsetCalc)
-	{
-		timeOffsetCalc += timeOffsetMillis;
-		s--;
-	}
-
+	
 
 	// Verify if its time for next frame if not exit the loop.
 	if (!arduboy.nextFrame())
