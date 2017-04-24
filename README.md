@@ -8,6 +8,12 @@ Fully functionnal clock with an alarm and a timer
 ##### NOTE: Feel free to use this code, no need to give me credit.
 
 # APPLICATION CONTROL INFORMATION
+
+## MAIN SCREEN:
+Press UP or DOWN to cycle between screens
+Bottom left show Alarm time
+Bottom right show Timer time
+
 ## SCREEN:
 Press LEFT and RIGHT to turn screen OFF, clock still run in the background.
 Press UP and DOWN to turn screen ON.
@@ -22,13 +28,12 @@ Minutes: hold B, press UP or DOWN
 Seconds: hold A and B, press UP or DOWN
 
 ## ALARM SETTING:
-Hold DOWN from the main screen to enter Alarm setting window.
 Hold LEFT to turn the Alarm ON
 Tap LEFT or RIGHT to turn the Alarm music off while its playing.
 
 ## TIMER SETTING:
-Hold UP from the main screen to enter Timer setting window.
 Hold RIGHT to turn the Timer ON
+Tap LEFT to reset the Timer while its not running
 Tap LEFT or RIGHT to turn the Timer music off while its playing.
 
 ## PAUSE CLOCK:
