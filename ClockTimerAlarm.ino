@@ -11,9 +11,14 @@ Feel free to use this code, no need to give me credit.
 
 APPLICATION CONTROL INFORMATION
 
+MAIN SCREEN:
+Press UP or DOWN to cycle between screens
+Bottom left show Alarm time
+Bottom right show Timer time
+
 SCREEN:
-Press LEFT and RIGHT to turn screen OFF, clock still run in the background.
-Press UP and DOWN to turn screen ON.
+Press LEFT and RIGHT to turn screen OFF, clock still run in the background
+Press UP and DOWN to turn screen ON
 
 12H or 24H:
 Press LEFT and DOWN to set clock type to 12h AM/PM (Default)
@@ -25,14 +30,13 @@ Minutes: hold B, press UP or DOWN
 Seconds: hold A and B, press UP or DOWN
 
 ALARM SETTING:
-Hold DOWN from the main screen to enter Alarm setting window.
 Hold LEFT to turn the Alarm ON
-Tap LEFT or RIGHT to turn the Alarm music off while its playing.
+Tap LEFT or RIGHT to turn the Alarm music off while its playing
 
 TIMER SETTING:
-Hold UP from the main screen to enter Timer setting window.
 Hold RIGHT to turn the Timer ON
-Tap LEFT or RIGHT to turn the Timer music off while its playing.
+Tap LEFT to reset the Timer while its not running
+Tap LEFT or RIGHT to turn the Timer music off while its playing
 
 PAUSE CLOCK:
 Pause clock hold A and B, Only works with screen ON
@@ -42,8 +46,82 @@ Pause clock hold A and B, Only works with screen ON
 
 #include <Arduboy2.h>
 #include <ArduboyPlaytune.h>
+#include <Tinyfont.h>
 
 Arduboy2 arduboy;
+Tinyfont ardTiny = Tinyfont(arduboy.sBuffer, Arduboy2::width(), Arduboy2::height());
+#define ARDBITMAP_SBUF arduboy.getBuffer()
+#include <ArdBitmap.h>
+ArdBitmap<WIDTH, HEIGHT> ardbitmap;
+
+const unsigned char PROGMEM FRAME[] = {
+	0xc0, 0x60, 0xb8, 0x4c, 0xb4, 0xb6, 0x4b, 0xb5, 0xb5, 0x4b, 0xff, 0x49, 0xb7, 0x81, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x03, 0x05, 0xdb, 0x25, 0xdb, 0x25,
+	0x25, 0xdb, 0x25, 0xdb, 0x05, 0x03, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+	0x01, 0x01, 0x81, 0xb7, 0x49, 0xff, 0x4b, 0xb5, 0xb5, 0x4b, 0xb6, 0xb4, 0x4c, 0xb8, 0x60, 0xc0,
+	0xff, 0x16, 0x15, 0x0e, 0x15, 0x15, 0x0e, 0x35, 0xb5, 0x4e, 0xff, 0x4e, 0xb5, 0xb5, 0x4e, 0xb5,
+	0xb5, 0x4e, 0x35, 0x35, 0x0e, 0x35, 0x35, 0x0e, 0x15, 0x16, 0x0d, 0x16, 0x16, 0x0e, 0x14, 0x14,
+	0x0c, 0x14, 0x14, 0x0c, 0x14, 0x14, 0x0c, 0x14, 0x14, 0x0c, 0x14, 0x0c, 0x0c, 0x0c, 0x04, 0x04,
+	0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x06, 0x05, 0x06, 0x05, 0x06, 0x05,
+	0x05, 0x06, 0x05, 0x06, 0x05, 0x06, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+	0x04, 0x04, 0x0c, 0x0c, 0x0c, 0x14, 0x0c, 0x14, 0x14, 0x0c, 0x14, 0x14, 0x0c, 0x14, 0x14, 0x0c,
+	0x14, 0x14, 0x0e, 0x16, 0x16, 0x0d, 0x16, 0x15, 0x0e, 0x35, 0x35, 0x0e, 0x35, 0x35, 0x4e, 0xb5,
+	0xb5, 0x4e, 0xb5, 0xb5, 0x4e, 0xff, 0x4e, 0xb5, 0x35, 0x0e, 0x15, 0x15, 0x0e, 0x15, 0x16, 0xff,
+	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xad, 0x52, 0xff, 0x92, 0x6d, 0x6d, 0x02, 0x01,
+	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	0x01, 0x02, 0x6d, 0x6d, 0x92, 0xff, 0x52, 0xad, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xff, 0xa4, 0x5b, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x5b, 0xa4, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xe0, 0xff, 0x24, 0xdb, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0xdb, 0x24, 0xff, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xb5, 0x4a, 0xff, 0x49, 0xb6, 0xb6, 0x40, 0x80,
+	0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
+	0x80, 0x40, 0xb6, 0xb6, 0x49, 0xff, 0x4a, 0xb5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x68, 0xa8, 0x70, 0xa8, 0xa8, 0x70, 0xac, 0xad, 0x72, 0xff, 0x72, 0xad, 0xad, 0x72, 0xad,
+	0xad, 0x72, 0xac, 0xac, 0x70, 0xac, 0xac, 0x70, 0xa8, 0x68, 0xb0, 0x68, 0x68, 0x70, 0x28, 0x28,
+	0x30, 0x28, 0x28, 0x30, 0x28, 0x28, 0x30, 0x28, 0x28, 0x30, 0x28, 0x30, 0x28, 0x30, 0x30, 0x30,
+	0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x60, 0xa0, 0x60, 0xa0, 0x60, 0xa0,
+	0xa0, 0x60, 0xa0, 0x60, 0xa0, 0x60, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+	0x30, 0x30, 0x30, 0x28, 0x30, 0x28, 0x30, 0x28, 0x28, 0x30, 0x28, 0x28, 0x30, 0x28, 0x28, 0x30,
+	0x28, 0x28, 0x70, 0x68, 0x68, 0xb0, 0x68, 0xa8, 0x70, 0xac, 0xac, 0x70, 0xac, 0xac, 0x72, 0xad,
+	0xad, 0x72, 0xad, 0xad, 0x72, 0xff, 0x72, 0xad, 0xac, 0x70, 0xa8, 0xa8, 0x70, 0xa8, 0x68, 0xff,
+	0x03, 0x06, 0x1d, 0x32, 0x2d, 0x6d, 0xd2, 0xad, 0xad, 0xd2, 0xff, 0x92, 0xed, 0x81, 0x80, 0x80,
+	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xc0, 0xa0, 0xdb, 0xa4, 0xdb, 0xa4,
+	0xa4, 0xdb, 0xa4, 0xdb, 0xa0, 0xc0, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+	0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+	0x80, 0x80, 0x81, 0xed, 0x92, 0xff, 0xd2, 0xad, 0xad, 0xd2, 0x6d, 0x2d, 0x32, 0x1d, 0x06, 0x03,
+};
+
+
 ArduboyPlaytune ardtune(arduboy.audio.enabled);
 
 int frameRate = 15;	// Frame rate, default 15 to save battery
@@ -93,7 +171,12 @@ int hT = 0, mT = 0, sT = 0;	// Timer variables, hT:Hours, mT:Minutes, sT:Seconds
 String timerText;	// Text variable for Timer
 bool timerSetting = false; // Change to Timer setting window, TRUE = Display Timer
 bool timerOnSetting = false;	// Verify is timer is On or OFF, TRUE = Timer ON, FALSE - Timer OFF
+int hTS, mTS, sTS; // Variable Set for when you reset the timer
 
+// Return to Main screen
+long returnCountDown = 10000; // 10 Second count down
+long returnCount = 0;	// Used for count down
+bool returnCounting = true;	// Counting down or not
 
 // Store the music score, (Music from the Arduboy Playtune example)
 const byte score[] PROGMEM = {
@@ -274,15 +357,17 @@ void loop()
 	
 	HeldLeftButton();	// Call function and verify if user want to turn the Alarm ON or OFF
 	HeldRightButton();	// Call function and verify if user want to Start or Stop the Timer
+	HeldDownButton();
+	HeldUpButton();
 
 	// Change to the Alarm setting Screen
-	if (HeldDownButton() || alarmSetting)
+	if (/*HeldDownButton() || */alarmSetting)
 	{
 		arduboy.clear();	// Clear the display buffer
 		DisplayAlarm();		// Call the function to show the Alarm setting screen
 	}
 	// Change to the Timer setting Screen
-	else if (HeldUpButton() || timerSetting)
+	else if (/*HeldUpButton() || */timerSetting)
 	{
 		arduboy.clear();	// Clear the display buffer
 		DisplayTimer();		// Call the function to show the Timer setting screen
@@ -598,6 +683,7 @@ boolean AmPmSwap(bool ClockOrAlarm)
 // 'changeH' Increment(TRUE) or Decrement(FALSE) hours, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'setTimer' TRUE=Setting Timer
 int HourTurn(bool changeH, bool ClockOrAlarm, bool setTimer)
 {
+	ResetReturnCount(); // Reset return to main screen countdown
 	// Enter the increment section
 	if (changeH)
 	{
@@ -620,6 +706,13 @@ int HourTurn(bool changeH, bool ClockOrAlarm, bool setTimer)
 			{
 				hAv = 0;
 				AmPmSwap(ClockOrAlarm);
+			}
+		}
+		else
+		{
+			if (hAv > 99)
+			{
+				hAv = 99;
 			}
 		}
 	}
@@ -661,6 +754,7 @@ int HourTurn(bool changeH, bool ClockOrAlarm, bool setTimer)
 // 'changeM' Increment(TRUE) or Decrement(FALSE) minutes, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'setTimer' TRUE=Setting Timer
 int MinuteTurn(bool changeM, bool ClockOrAlarm, bool setTimer)
 {
+	ResetReturnCount(); // Reset return to main screen countdown
 	// Enter the increment section
 	if (changeM)
 	{
@@ -706,6 +800,7 @@ int MinuteTurn(bool changeM, bool ClockOrAlarm, bool setTimer)
 // 'changeS' Increment(TRUE) or Decrement(FALSE) seconds, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'setTimer' TRUE=Setting Timer
 int SecondTurn(bool changeS, bool ClockOrAlarm, bool setTimer)
 {
+	ResetReturnCount(); // Reset return to main screen countdown
 	// Enter the increment section
 	if (changeS)
 	{
@@ -770,6 +865,7 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer)
 	{
 		minD = "";
 	}
+	
 	// Hour Space in front for time under 10
 	if (hD < 10)
 	{
@@ -779,6 +875,19 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer)
 	{
 		hourD = "";
 	}
+
+	if (Timer)
+	{
+		if (hD < 10)
+		{
+			hourD = "0";
+		}
+		else
+		{
+			hourD = "";
+		}
+	}
+
 	// Diplay AM or PM if clock set to 12h type Or nothing if is the Timer diplay
 	if (clockType && !Timer)
 	{
@@ -810,7 +919,7 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer)
 		ampmText = "";
 	}
 
-	return hourD + hD + clockS + minD + mD + clockS + secD + sD + ampmText;	// Create Display string
+	return hourD + hD + clockS + minD + mD + clockS + secD + sD; //BITMAP + ampmText;	// Create Display string
 }
 
 // Verify if no button has been pressed and return true if it is the case
@@ -872,11 +981,33 @@ boolean SingleButton(String chosenButton)
 }
 
 // Change to ALARM SETTINGS, Detect for down button held long enough
-boolean HeldDownButton()
+/*boolean*/void HeldDownButton()
 {
 	// Check if proper buttons has been pressed and the user is not at the Timer screen
-	if (arduboy.pressed(DOWN_BUTTON) && SingleButton("DOWN") && !timerSetting)
+	if (arduboy.pressed(DOWN_BUTTON) && SingleButton("DOWN") && buttonHeld/*&& !timerSetting*/)
 	{
+		buttonHeld = false;
+		returnCounting = true;
+		if (!timerSetting && !alarmSetting)
+		{
+			alarmSetting = true;
+			//return true;
+		}
+		else if (!timerSetting && alarmSetting)
+		{
+			alarmSetting = false;
+			timerSetting = true;
+			//return true;
+		}
+		else if (timerSetting && !alarmSetting)
+		{
+			alarmSetting = false;
+			timerSetting = false;
+			returnCounting = false;
+			//return true;
+		}
+		
+		/*
 		// Check if proper time has past while the button is held
 		if (millis() >= timeHeld && !startCounting && buttonHeld)
 		{
@@ -902,6 +1033,7 @@ boolean HeldDownButton()
 			startCounting = false;	// Set variable to indicate the countdown just started
 			arduboy.digitalWriteRGB(RGB_ON, RGB_OFF, RGB_OFF);	// Turn on light to indicate the button is being held
 		}
+		*/
 	}
 	// Check if no button has been pressed
 	if (NoButton())
@@ -912,11 +1044,33 @@ boolean HeldDownButton()
 }
 
 //Change to TIMER SETTINGS, Detect for DOWN button held long enough
-boolean HeldUpButton()
+/*boolean*/void HeldUpButton()
 {
 	// Check if proper buttons has been pressed and the user is not the Alarm screen
-	if (arduboy.pressed(UP_BUTTON) && SingleButton("UP") && !alarmSetting)
+	if (arduboy.pressed(UP_BUTTON) && SingleButton("UP") && buttonHeld/*&& !alarmSetting*/)
 	{
+		buttonHeld = false;
+		returnCounting = true;
+		if (!timerSetting && !alarmSetting)
+		{
+			timerSetting = true;
+			//return true;
+		}
+		else if (timerSetting && !alarmSetting)
+		{
+			alarmSetting = true;
+			timerSetting = false;
+			//return true;
+		}
+		else if (!timerSetting && alarmSetting)
+		{
+			alarmSetting = false;
+			timerSetting = false;
+			returnCounting = false;
+			//return true;
+		}
+		
+		/*
 		// Check if proper time has past while the button is held
 		if (millis() >= timeHeld && !startCounting && buttonHeld)
 		{
@@ -942,13 +1096,14 @@ boolean HeldUpButton()
 			startCounting = false;	// Set variable to indicate the countdown just started
 			arduboy.digitalWriteRGB(RGB_ON, RGB_ON, RGB_OFF);	// Turn on light to indicate the button is being held
 		}
+		*/
 	}
 	// Check if no button has been pressed
-	if (NoButton())
+	/*if (NoButton())
 	{
 		ResetButtonHeldCounter();	// Call function to reset ligth and multiple variables
 		return false;
-	}
+	}*/
 }
 
 // SET to ALARM ON or OFF, Detect for DOWN button held long enough
@@ -957,6 +1112,7 @@ boolean HeldLeftButton()
 	// Check if proper buttons has been pressed 
 	if (arduboy.pressed(LEFT_BUTTON) && SingleButton("LEFT"))
 	{
+		ResetReturnCount(); // Reset return to main screen countdown
 		// Check if music is playing
 		if (ardtune.playing())
 		{
@@ -969,10 +1125,11 @@ boolean HeldLeftButton()
 			// Check if proper time has past while the button is held
 			if (millis() >= timeHeld && !startCounting && buttonHeld)
 			{
+
 				buttonHeld = false;	// Reset the variable
-				timeHeld = 0;	// Reset the variable
+				timeHeld = 0;	// Reset the 
 				arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
-				//	Swap between Alarm ON or OFF
+								//	Swap between Alarm ON or OFF
 				if (alarmOnSetting)
 				{
 					alarmOnSetting = false;	// Set Alarm OFF
@@ -981,9 +1138,10 @@ boolean HeldLeftButton()
 				else
 				{
 					alarmOnSetting = true;	// Set Alarm ON
-					alarmSetting = false;	// Exit Alarm setting screen
+					//alarmSetting = false;	// Exit Alarm setting screen
 					return true;
 				}
+
 			}
 			// Start the count down for how long the button has been held
 			if (startCounting)
@@ -993,6 +1151,16 @@ boolean HeldLeftButton()
 				arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_ON);	// Turn on light to indicate the button is being held
 			}
 		}
+		else
+		{
+			if (!timerOnSetting)
+			{
+				sT = sTS;
+				mT = mTS;
+				hT = hTS;
+			}
+		}
+		
 	}
 	// Check if no button has been pressed
 	if (NoButton())
@@ -1008,6 +1176,7 @@ boolean HeldRightButton()
 	// Check if proper buttons has been pressed and the user is not at the main screen
 	if (arduboy.pressed(RIGHT_BUTTON) && SingleButton("RIGHT"))
 	{
+		ResetReturnCount(); // Reset return to main screen countdown
 		// Check if music is playing
 		if (ardtune.playing())
 		{
@@ -1032,7 +1201,10 @@ boolean HeldRightButton()
 				else
 				{
 					timerOnSetting = true;	// Start timer
-					timerSetting = false;	// Exit Timer setting screen
+					sTS = sT;
+					mTS = mT;
+					hTS = hT;
+					//timerSetting = false;	// Exit Timer setting screen
 					return true;
 				}
 			}
@@ -1056,34 +1228,43 @@ boolean HeldRightButton()
 //  Display the Main screen
 void DisplayMain()
 {
+	String alarmClock;
+	String timerClock;
+
+	ardbitmap.drawBitmap(64, 32, FRAME, 128, 64, WHITE, ALIGN_CENTER, MIRROR_NONE);
+	ardTiny.setCursor(15, 2);
+	ardTiny.print("ALARM");
+	ardTiny.setCursor(90, 2);
+	ardTiny.print("TIMER");
+
 	// Display Timer if running
 	if (timerOnSetting)
 	{
-		arduboy.setCursor(locX, locY + 21);	// Set location for text
-		arduboy.print("Hold RIGHT to stop");	// Add to display buffer
-		arduboy.setCursor(locX + 32, locY + 31);	// Set location for Timer clock
-		arduboy.print(CreateDisplayText(sT, mT, hT, false, true));	// Add to display buffer by calling function to create the time text
+		arduboy.setCursor(74, 2);
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
 	}
 	// Display how to access Timer screen
 	else
 	{
-		arduboy.setCursor(locX, locY + 21);	// Set location for text
-		arduboy.print("Hold UP for Timer");	// Add to display buffer
+		arduboy.setCursor(71, 2);
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
 	}
 
 	// Display Alarm if its ON
 	if (alarmOnSetting)
 	{
-		arduboy.setCursor(locX, locY + 41);	// Set location for text
-		arduboy.print("Hold LEFT to turn OFF");	// Add to display buffer
-		arduboy.setCursor(locX + 32, locY + 51);	// Set location for Alarm clock
-		arduboy.print(CreateDisplayText(sA, mA, hA, false, false));	// Add to display buffer by calling function to create the time text
+		arduboy.setCursor(44, 2);
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
 	}
 	// Diplay how to access Alarm screen
 	else
 	{
-		arduboy.setCursor(locX, locY + 41);	// Set location for text
-		arduboy.print("Hold DOWN for Alarm");	// Add to display buffer
+		arduboy.setCursor(41, 2);
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
 	}
 	
 
@@ -1092,11 +1273,82 @@ void DisplayMain()
 	m = *(arrD + 1);	// Extract minutes from array as per previous function
 	h = *(arrD + 2);	// Extract hours from array as per previous function
 	arduboy.setTextSize(2);	// Increase font size
-	arduboy.setCursor(locX + 2, locY);	// Set location for clock
+	arduboy.setCursor(17, 25);	// Set location for clock
 	clockText = CreateDisplayText(s, m, h, true, false);	// Add to display buffer by calling function to create the time text
 	arduboy.print(clockText); // Print clock
+	
+	ardTiny.setCursor(55, 13);
+	ardTiny.print("TIME");
 
+	if (clockType)
+	{
+		if (ampm)
+		{
+			arduboy.setCursor(59, 44); // +3 ON
+			arduboy.setTextSize(1);
+			arduboy.print("AM");
+		}
+		else
+		{
+			arduboy.setCursor(59, 44); // +3 ON
+			arduboy.setTextSize(1);
+			arduboy.print("PM");
+		}
 
+		alarmClock = CreateDisplayText(sA, mA, hA, false, false);
+		ardTiny.setCursor(14, 57);
+		if (ampmA)
+		{
+			ardTiny.print(alarmClock + "A");
+		}
+		else
+		{
+			ardTiny.print(alarmClock + "P");
+		}
+	}
+	else
+	{
+		alarmClock = CreateDisplayText(sA, mA, hA, false, false);
+		ardTiny.setCursor(14, 57);
+		if (ampmA)
+		{
+			ardTiny.print(alarmClock);
+		}
+		else
+		{
+			ardTiny.print(alarmClock);
+		}
+	}
+	timerClock = CreateDisplayText(sT, mT, hT, false, true);
+	ardTiny.setCursor(70, 57);
+	ardTiny.print(timerClock);
+	
+	if (ardtune.playing())
+	{
+		// Left border
+		ardTiny.setCursor(02, 22);
+		ardTiny.print("M");
+		ardTiny.setCursor(02, 27);
+		ardTiny.print("U");
+		ardTiny.setCursor(02, 32);
+		ardTiny.print("T");
+		ardTiny.setCursor(02, 37);
+		ardTiny.print("E");
+
+		// Left border
+		ardTiny.setCursor(122, 22);
+		ardTiny.print("M");
+		ardTiny.setCursor(122, 27);
+		ardTiny.print("U");
+		ardTiny.setCursor(122, 32);
+		ardTiny.print("T");
+		ardTiny.setCursor(122, 37);
+		ardTiny.print("E");
+	}
+	
+	
+
+	
 	/* Section used for debugging
 	arduboy.setTextSize(1);
 	arduboy.setCursor(locX + 2, locY+50);
@@ -1114,6 +1366,76 @@ void DisplayMain()
 // Display the Alarm setting screen
 void DisplayAlarm()
 {
+	ardbitmap.drawBitmap(64, 32, FRAME, 128, 64, WHITE, ALIGN_CENTER, MIRROR_NONE);
+	ardTiny.setCursor(15, 2);
+	ardTiny.print("ALARM");
+	ardTiny.setCursor(90, 2);
+	ardTiny.print("TIMER");
+
+	ardTiny.setCursor(34, 57);
+	ardTiny.print("ALARM");
+	ardTiny.setCursor(70, 57);
+	ardTiny.print("SETTING");
+
+	// Display Timer if running
+	if (timerOnSetting)
+	{
+		arduboy.setCursor(74, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
+
+	}
+	else
+	{
+		arduboy.setCursor(71, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
+	}
+	// Display Alarm if its ON
+	if (alarmOnSetting)
+	{
+		arduboy.setCursor(44, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
+		// Left border
+		ardTiny.setCursor(02, 14);
+		ardTiny.print("T");
+		ardTiny.setCursor(02, 19);
+		ardTiny.print("U");
+		ardTiny.setCursor(02, 24);
+		ardTiny.print("R");
+		ardTiny.setCursor(02, 29);
+		ardTiny.print("N");
+		ardTiny.setCursor(02, 36);
+		ardTiny.print("O");
+		ardTiny.setCursor(02, 41);
+		ardTiny.print("F");
+		ardTiny.setCursor(02, 46);
+		ardTiny.print("F");
+	}
+	else
+	{
+		arduboy.setCursor(41, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
+		// Left border
+		ardTiny.setCursor(02, 14);
+		ardTiny.print("T");
+		ardTiny.setCursor(02, 19);
+		ardTiny.print("U");
+		ardTiny.setCursor(02, 24);
+		ardTiny.print("R");
+		ardTiny.setCursor(02, 29);
+		ardTiny.print("N");
+		ardTiny.setCursor(02, 36);
+		ardTiny.print("O");
+		ardTiny.setCursor(02, 41);
+		ardTiny.print("N");
+	}
+	
+	
+
+	/*
 	String alarmStatusText;	// Used for displaying if Alarm if ON or OFF
 	// Verify Alarm status and set string accordingly
 	if (alarmOnSetting)
@@ -1138,8 +1460,8 @@ void DisplayAlarm()
 
 	arduboy.setCursor(0, 0);	// Print clock type top left corner
 	arduboy.print(clockTypeText + "  ALARM SETTING\n\r" + alarmStatusText);	// Add to display buffer 
-
-	arduboy.setCursor(locX + 2, locY + 32);	// Set location for text
+	*/
+	arduboy.setCursor(17, 25);	// Set location for text
 	arrD = AdjustTime(sA, mA, hA, false, false);	// Call funtion to change time if user choose to
 	sA = *(arrD);	// Extract seconds from array as per previous function
 	mA = *(arrD + 1);	// Extract minutes from array as per previous function
@@ -1148,6 +1470,21 @@ void DisplayAlarm()
 	arduboy.print(CreateDisplayText(sA, mA, hA, false, false));	// Add to display buffer by calling function to create the time text
 	arduboy.setTextSize(1);	// Reset font size
 
+	if (clockType)
+	{
+		if (ampmA)
+		{
+			arduboy.setCursor(59, 44);
+			arduboy.setTextSize(1);
+			arduboy.print("AM");
+		}
+		else
+		{
+			arduboy.setCursor(59, 44);
+			arduboy.setTextSize(1);
+			arduboy.print("PM");
+		}
+	}
 	/* Section used for debugging
 	arduboy.setTextSize(1);
 	arduboy.setCursor(locX + 2, locY+50);
@@ -1165,7 +1502,77 @@ void DisplayAlarm()
 
 // Display the Timer setting screen
 void DisplayTimer()
-{
+{	
+	ardbitmap.drawBitmap(64, 32, FRAME, 128, 64, WHITE, ALIGN_CENTER, MIRROR_NONE);
+	ardTiny.setCursor(15, 2);
+	ardTiny.print("ALARM");
+	ardTiny.setCursor(90, 2);
+	ardTiny.print("TIMER");
+
+	ardTiny.setCursor(34, 57);
+	ardTiny.print("TIMER");
+	ardTiny.setCursor(70, 57);
+	ardTiny.print("SETTING");
+
+	// Display Timer if running
+	if (timerOnSetting)
+	{
+		arduboy.setCursor(74, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
+
+		// Right border
+		ardTiny.setCursor(122, 22);
+		ardTiny.print("S");
+		ardTiny.setCursor(122, 27);
+		ardTiny.print("T");
+		ardTiny.setCursor(122, 32);
+		ardTiny.print("O");
+		ardTiny.setCursor(122, 37);
+		ardTiny.print("P");
+	}
+	else
+	{
+		arduboy.setCursor(71, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
+		// Left border
+		ardTiny.setCursor(02, 20);
+		ardTiny.print("R");
+		ardTiny.setCursor(02, 25);
+		ardTiny.print("E");
+		ardTiny.setCursor(02, 30);
+		ardTiny.print("S");
+		ardTiny.setCursor(02, 35);
+		ardTiny.print("E");
+		ardTiny.setCursor(02, 40);
+		ardTiny.print("T");
+		// Right border
+		ardTiny.setCursor(122, 20);
+		ardTiny.print("S");
+		ardTiny.setCursor(122, 25);
+		ardTiny.print("T");
+		ardTiny.setCursor(122, 30);
+		ardTiny.print("A");
+		ardTiny.setCursor(122, 35);
+		ardTiny.print("R");
+		ardTiny.setCursor(122, 40);
+		ardTiny.print("T");
+	}
+	// Display Alarm if its ON
+	if (alarmOnSetting)
+	{
+		arduboy.setCursor(44, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
+	}
+	else
+	{
+		arduboy.setCursor(41, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
+	}
+	/*
 	String timerStatusText;	// Used for displaying if Timer if Runnig or OFF
 	// Verify Timer status and set string accordingly
 	if (timerOnSetting)
@@ -1179,7 +1586,7 @@ void DisplayTimer()
 
 	arduboy.setCursor(0, 0);	// Set location for text
 	arduboy.print(" TIMER SETTINGS\n\r" + timerStatusText);	// Add to display buffer
-
+	*/
 	// Check if timer is not running, User cannot change the timer if it is currently running
 	if (!timerOnSetting)
 	{
@@ -1188,10 +1595,11 @@ void DisplayTimer()
 		mT = *(arrD + 1);	// Extract minutes from array as per previous function
 		hT = *(arrD + 2);	// Extract hours from array as per previous function
 	}
-	arduboy.setCursor(locX + 7, locY + 32);	// Set location for text
+	arduboy.setCursor(17, 25);	// Set location for text
 	arduboy.setTextSize(2);	// Increase font size
 	arduboy.print(CreateDisplayText(sT, mT, hT, false, true));	// Add to display buffer by calling function to create the time text
 	arduboy.setTextSize(1);	// Reset font size
+
 }
 
 // At every calls the Timer decrement.
@@ -1233,5 +1641,21 @@ void ResetButtonHeldCounter()
 	buttonHeld = true;	// Reset variable confirming a button is being held
 	startCounting = true;	// Set variable to indicate to reset the countdown
 	arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);	// Turn off lights when no button is being held
+
+	if (millis() >= returnCount && !returnCounting)
+	{
+		timerSetting = false;
+		alarmSetting = false;
+		returnCount = 0;	// Reset the 
+	}
+	if (returnCounting)
+	{
+		ResetReturnCount();	// Set the varible for the counter with how long button should be held as per 'heldTime'
+		returnCounting = false;	// Set variable to indicate the countdown just started
+	}
 }
 
+void ResetReturnCount() 
+{
+	returnCount = millis() + returnCountDown;
+}
