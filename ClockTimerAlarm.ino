@@ -124,7 +124,7 @@ const unsigned char PROGMEM FRAME[] = {
 
 ArduboyPlaytune ardtune(arduboy.audio.enabled);
 
-int frameRate = 15;	// Frame rate, default 15 to save battery
+const int frameRate = 15;	// Frame rate, default 15 to save battery
 int sc = frameRate; // Frame counter used for Pause and AM/PM swap
 
 long milSec = 1000;	// Second counter, 1 second = 1000 milliseconds
@@ -1039,7 +1039,6 @@ boolean SingleButton(String chosenButton)
 	if (NoButton())
 	{
 		ResetButtonHeldCounter();	// Call function to reset ligth and multiple variables
-		return false;
 	}
 }
 
@@ -1155,9 +1154,7 @@ boolean HeldLeftButton()
 		{
 			if (!timerOnSetting)
 			{
-				sT = sTS;
-				mT = mTS;
-				hT = hTS;
+				ResetTimer();
 			}
 		}
 		
@@ -1231,7 +1228,7 @@ void DisplayMain()
 	String alarmClock;
 	String timerClock;
 
-	ardbitmap.drawBitmap(64, 32, FRAME, 128, 64, WHITE, ALIGN_CENTER, MIRROR_NONE);
+	DrawFrame();
 	ardTiny.setCursor(15, 2);
 	ardTiny.print("ALARM");
 	ardTiny.setCursor(90, 2);
@@ -1366,7 +1363,7 @@ void DisplayMain()
 // Display the Alarm setting screen
 void DisplayAlarm()
 {
-	ardbitmap.drawBitmap(64, 32, FRAME, 128, 64, WHITE, ALIGN_CENTER, MIRROR_NONE);
+	DrawFrame();
 	ardTiny.setCursor(15, 2);
 	ardTiny.print("ALARM");
 	ardTiny.setCursor(90, 2);
@@ -1503,7 +1500,7 @@ void DisplayAlarm()
 // Display the Timer setting screen
 void DisplayTimer()
 {	
-	ardbitmap.drawBitmap(64, 32, FRAME, 128, 64, WHITE, ALIGN_CENTER, MIRROR_NONE);
+	DrawFrame();
 	ardTiny.setCursor(15, 2);
 	ardTiny.print("ALARM");
 	ardTiny.setCursor(90, 2);
@@ -1630,6 +1627,7 @@ void TimerCountDown()
 			sT = 0;	// Reset seconds
 			ardtune.playScore(score);	// Start the music
 			timerOnSetting = false;	// Set Timer status to OFF
+			ResetTimer();
 		}
 		
 	}
@@ -1658,4 +1656,16 @@ void ResetButtonHeldCounter()
 void ResetReturnCount() 
 {
 	returnCount = millis() + returnCountDown;
+}
+
+void DrawFrame() 
+{
+	ardbitmap.drawBitmap(64, 32, FRAME, 128, 64, WHITE, ALIGN_CENTER, MIRROR_NONE);
+}
+
+void ResetTimer()
+{
+	sT = sTS;
+	mT = mTS;
+	hT = hTS;
 }
