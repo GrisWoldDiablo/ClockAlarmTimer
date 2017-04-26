@@ -45,6 +45,7 @@
 #### Tap RIGHT for Blank screen
 
 ## PONG:
+#### Hold LEFT to start playing while in Screensaver setting
 #### AI plays automaticaly
 #### Hold A to take control of the left PAD
 #### UP and DOWN control PAD while in control
