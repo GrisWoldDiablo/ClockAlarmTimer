@@ -1,8 +1,8 @@
 
 
 /*
-Clock Alarm Timer 12h or 24h
-Version : 2.0,  April 18, 2017
+Clock Alarm Timer 12h or 24h, Screensaver with Pong.
+Version : 3.0,  April 26, 2017
 Author: GrisWold Diablo
 Twitter: @GrisWoldDiablo
 
