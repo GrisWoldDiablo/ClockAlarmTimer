@@ -47,6 +47,7 @@ Tap LEFT for Pong, Hold LEFT to start playing
 Tap RIGHT for Blank screen
 
 PONG:
+Hold LEFT to start playing while in Screensaver setting
 AI plays automaticaly
 Hold A to take control of the left PAD
 UP and DOWN control PAD while in control
@@ -316,7 +317,7 @@ bool direction = true;
 bool PongScreenSaver = false;
 bool ssONOFF = false; // TRUE = Screen saver ON, FALSE = Screen saver OFF
 long ssCD = 0;
-long ssCDT = 15000; // 30 Seconds
+long ssCDT = 30000; // 30 Seconds
 
 
 
