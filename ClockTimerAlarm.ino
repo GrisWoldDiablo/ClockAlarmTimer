@@ -1,8 +1,8 @@
 
 
 /*
-Clock Alarm Timer 12h or 24h
-Version : 2.0,  April 18, 2017
+Clock Alarm Timer 12h or 24h, Screensaver with Pong.
+Version : 3.0,  April 26, 2017
 Author: GrisWold Diablo
 Twitter: @GrisWoldDiablo
 
@@ -16,7 +16,7 @@ Press UP or DOWN to cycle between screens
 Bottom left show Alarm time
 Bottom right show Timer time
 
-SCREEN:
+TURNING ON OR OFF DISPLAY:
 Press LEFT and RIGHT to turn screen OFF, clock still run in the background
 Press UP and DOWN to turn screen ON
 
@@ -41,6 +41,18 @@ Tap LEFT or RIGHT to turn the Timer music off while its playing
 PAUSE CLOCK:
 Pause clock hold A and B, Only works with screen ON
 
+SCREENSAVER SETTING:
+Press A to turn ON or OFF
+Tap LEFT for Pong, Hold LEFT to start playing
+Tap RIGHT for Blank screen
+
+PONG:
+Hold LEFT to start playing while in Screensaver setting
+AI plays automaticaly
+Hold A to take control of the left PAD
+UP and DOWN control PAD while in control
+Tap B to reset Score
+Hold RIGHT to exit and turn OFF screensaver
 
 */
 
@@ -285,6 +297,33 @@ const byte score[] PROGMEM = {
 	0xf0
 };
 
+// 1 PONG ADDON CODE
+
+int xDir = WIDTH / 2, yDir = HEIGHT / 2;
+int xMove = 1, yMove = 1;
+int xSpeed = 3, ySpeed = 3;
+int bounces = 0;
+int ballRadius = 2;
+int xP1 = 4, yP1 = (HEIGHT / 2) - 7;
+int	xP2 = WIDTH - 5, yP2 = (HEIGHT / 2) - 7;
+int yPL = 15;
+int aiWin = 0;
+int p1Score = 0, p2Score = 0, p1Wins = 0, p2Wins = 0;
+
+bool screenSaverSetting = false;
+bool screenSaverType = true;	// TRUE = Blank, FALSE = Pong
+bool direction = true;
+// count down screen saver
+bool PongScreenSaver = false;
+bool ssONOFF = false; // TRUE = Screen saver ON, FALSE = Screen saver OFF
+long ssCD = 0;
+long ssCDT = 30000; // 30 Seconds
+
+
+
+
+// 1 PONG ADDON CODE
+
 void setup()
 {
 	ardtune.initChannel(PIN_SPEAKER_1);	// Initialise first speaker pin
@@ -293,6 +332,14 @@ void setup()
 	arduboy.setFrameRate(frameRate);	// Time calculated based on set variable frames per second
 	arduboy.clear();	// Clear display buffer
 	arduboy.audio.on();	// Turn on Audio.
+
+	// 2 PONG ADDON CODE
+	if (rand() % 1 == 0)
+	{
+		direction = !direction;
+		xMove = -xMove;
+	}
+	// 2 PONG ADDON CODE
 }
 
 void loop()
@@ -347,11 +394,37 @@ void loop()
 		alarmOnSetting = false;	// Turn off the Alarm setting to OFF
 	}
 	
+	if (PongScreenSaver)
+	{
+		if (ssONOFF)
+		{
+			if (!screenSaverType)
+			{
+				Pong();
+				if (HeldRightButton())
+				{
+					PongScreenSaver = false;
+				}
+				return;
+			}
+		}
+		else if (!screenSaverType)
+		{
+			Pong();
+			if (HeldRightButton())
+			{
+				PongScreenSaver = false;
+			}
+			return;
+		}
+
+	}
 	ShowDisplay();	// Call function and verify if the used is trying to turn ON or OFF the display
 
 	// Exit loop function if screen should be OFF
 	if (!diplayOnOff)
 	{
+		arduboy.display();
 		return;
 	}
 	
@@ -372,6 +445,12 @@ void loop()
 		arduboy.clear();	// Clear the display buffer
 		DisplayTimer();		// Call the function to show the Timer setting screen
 	}
+	// 3 PONG ADDON CODE
+	else if (screenSaverSetting)
+	{
+		DisplayPong();
+	}
+	// 3 PONG ADDON CODE
 	// Show main Screen if no other Screen are called
 	else
 	{	
@@ -463,6 +542,7 @@ void ShowDisplay()
 		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);	// Turn off LEDs if any were on while transitioning
 		diplayOnOff = true;	// Set the variable that detects Display to be ON
 	}
+	NoButton();
 }
 
 // Modify time sA=Seconds, mA=Minutes, hA=Hours, 'ClockOrAlarm' TRUE=Setting Clock, FALSE=Setting Alarm, 'SetTimer' TRUE=Setting Timer
@@ -845,7 +925,7 @@ int SecondTurn(bool changeS, bool ClockOrAlarm, bool setTimer)
 
 
 // Combine necessary strings to present the time, 'ClockOrAlarm' TRUE=Clock, FALSE=Alarm, 'Timer' TRUE=Timer Display
-String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer)
+String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer, bool Pong)
 {
 	// Seconds diplay as 01 instead of 1
 	if (sD >= 0 && sD <= 9)
@@ -918,8 +998,11 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer)
 	{
 		ampmText = "";
 	}
-
-	return hourD + hD + clockS + minD + mD + clockS + secD + sD; //BITMAP + ampmText;	// Create Display string
+	if (!Pong)
+	{
+		return hourD + hD + clockS + minD + mD + clockS + secD + sD;	// Create Display string
+	}
+	return hourD + hD + clockS + minD + mD;	// Create Display string
 }
 
 // Verify if no button has been pressed and return true if it is the case
@@ -927,8 +1010,30 @@ boolean NoButton()
 {
 	if (arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(UP_BUTTON) && arduboy.notPressed(DOWN_BUTTON) && arduboy.notPressed(LEFT_BUTTON) && arduboy.notPressed(RIGHT_BUTTON))
 	{
+		if (ssONOFF)
+		{
+			if (millis() >= ssCD)
+			{
+				if (screenSaverType)
+				{
+					diplayOnOff = false;
+				}
+				else
+				{
+					PongScreenSaver = true;
+				}
+			}
+			else if (ssCD == -1)
+			{
+				ssCD = millis() + ssCDT;
+			}
+		}
+		buttonHeld = true;
 		return true;
+
 	}
+
+	ssCD = -1;
 	return false;
 }
 
@@ -988,52 +1093,24 @@ boolean SingleButton(String chosenButton)
 	{
 		buttonHeld = false;
 		returnCounting = true;
-		if (!timerSetting && !alarmSetting)
+		if (!alarmSetting && !timerSetting && !screenSaverSetting)
 		{
 			alarmSetting = true;
-			//return true;
 		}
-		else if (!timerSetting && alarmSetting)
+		else if (alarmSetting)
 		{
 			alarmSetting = false;
 			timerSetting = true;
-			//return true;
 		}
-		else if (timerSetting && !alarmSetting)
+		else if (timerSetting)
 		{
-			alarmSetting = false;
 			timerSetting = false;
-			returnCounting = false;
-			//return true;
+			screenSaverSetting = true;
 		}
-		
-		/*
-		// Check if proper time has past while the button is held
-		if (millis() >= timeHeld && !startCounting && buttonHeld)
+		else if (screenSaverSetting)
 		{
-			buttonHeld = false;	// Reset the variable
-			timeHeld = 0;	// Reset the variable
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
-			//	Swap between Main and Alarm screen
-			if (alarmSetting)
-			{
-				alarmSetting = false;
-				return false;
-			}
-			else
-			{
-				alarmSetting = true;
-				return true;
-			}				
+			screenSaverSetting = false;
 		}
-		// Start the count down for how long the button has been held
-		if (startCounting)
-		{
-			timeHeld = millis() + heldTime;	// Set the varible for the counter with how long button should be held as per the variable
-			startCounting = false;	// Set variable to indicate the countdown just started
-			arduboy.digitalWriteRGB(RGB_ON, RGB_OFF, RGB_OFF);	// Turn on light to indicate the button is being held
-		}
-		*/
 	}
 	// Check if no button has been pressed
 	if (NoButton())
@@ -1050,59 +1127,30 @@ boolean SingleButton(String chosenButton)
 	{
 		buttonHeld = false;
 		returnCounting = true;
-		if (!timerSetting && !alarmSetting)
+		if (!alarmSetting && !timerSetting && !screenSaverSetting)
 		{
+			screenSaverSetting = true;
+		}
+		else if (screenSaverSetting)
+		{
+			screenSaverSetting = false;
 			timerSetting = true;
-			//return true;
 		}
-		else if (timerSetting && !alarmSetting)
+		else if (timerSetting)
 		{
-			alarmSetting = true;
 			timerSetting = false;
-			//return true;
+			alarmSetting = true;
 		}
-		else if (!timerSetting && alarmSetting)
+		else if (alarmSetting)
 		{
 			alarmSetting = false;
-			timerSetting = false;
-			returnCounting = false;
-			//return true;
 		}
-		
-		/*
-		// Check if proper time has past while the button is held
-		if (millis() >= timeHeld && !startCounting && buttonHeld)
-		{
-			buttonHeld = false;	// Reset the variable
-			timeHeld = 0;	// Reset the variable
-			arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
-			//	Swap between Main and Timer screen
-			if (timerSetting)
-			{
-				timerSetting = false;
-				return false;
-			}
-			else
-			{
-				timerSetting = true;
-				return true;
-			}
-		}
-		// Start the count down for how long the button has been held
-		if (startCounting)
-		{
-			timeHeld = millis() + heldTime;	// Set the varible for the counter with how long button should be held as per the variable
-			startCounting = false;	// Set variable to indicate the countdown just started
-			arduboy.digitalWriteRGB(RGB_ON, RGB_ON, RGB_OFF);	// Turn on light to indicate the button is being held
-		}
-		*/
+		// PONG ADDON CODE
 	}
-	// Check if no button has been pressed
-	/*if (NoButton())
+	if (NoButton())
 	{
 		ResetButtonHeldCounter();	// Call function to reset ligth and multiple variables
-		return false;
-	}*/
+	}
 }
 
 // SET to ALARM ON or OFF, Detect for DOWN button held long enough
@@ -1119,7 +1167,7 @@ boolean HeldLeftButton()
 		}
 
 		// Count if user is not at the Timer screen
-		if (!timerSetting)
+		if (!timerSetting && !screenSaverSetting || (screenSaverSetting && !screenSaverType))
 		{
 			// Check if proper time has past while the button is held
 			if (millis() >= timeHeld && !startCounting && buttonHeld)
@@ -1128,17 +1176,25 @@ boolean HeldLeftButton()
 				buttonHeld = false;	// Reset the variable
 				timeHeld = 0;	// Reset the 
 				arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
-								//	Swap between Alarm ON or OFF
-				if (alarmOnSetting)
+				if (!screenSaverSetting)
 				{
-					alarmOnSetting = false;	// Set Alarm OFF
-					return false;
+					//	Swap between Alarm ON or OFF
+					if (alarmOnSetting)
+					{
+						alarmOnSetting = false;	// Set Alarm OFF
+						return false;
+					}
+					else
+					{
+						alarmOnSetting = true;	// Set Alarm ON
+						//alarmSetting = false;	// Exit Alarm setting screen
+						return true;
+					}
 				}
 				else
 				{
-					alarmOnSetting = true;	// Set Alarm ON
-					//alarmSetting = false;	// Exit Alarm setting screen
-					return true;
+					screenSaverSetting = false;
+					PongScreenSaver = true;
 				}
 
 			}
@@ -1152,9 +1208,16 @@ boolean HeldLeftButton()
 		}
 		else
 		{
-			if (!timerOnSetting)
+			if (timerSetting)
 			{
-				ResetTimer();
+				if (!timerOnSetting)
+				{
+					ResetTimer();
+				}
+			}
+			else if (screenSaverSetting)
+			{
+				screenSaverType = false;
 			}
 		}
 		
@@ -1181,7 +1244,7 @@ boolean HeldRightButton()
 		}
 
 		// Count if user is not at the Alarm screen
-		if (!alarmSetting)
+		if (!alarmSetting && !screenSaverSetting)
 		{
 			// Check if proper time has past while the button is held
 			if (millis() >= timeHeld && !startCounting && buttonHeld)
@@ -1189,19 +1252,27 @@ boolean HeldRightButton()
 				buttonHeld = false;	// Reset the variable
 				timeHeld = 0;	// Reset the variable
 				arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_OFF);	// Turn on light to indicate the button was held long enough
-				//	Swap Timer status, Running or Not
-				if (timerOnSetting)
+
+				if (!PongScreenSaver)
 				{
-					timerOnSetting = false;	// Stop timer
-					return false;
+					//	Swap Timer status, Running or Not
+					if (timerOnSetting)
+					{
+						timerOnSetting = false;	// Stop timer
+						return false;
+					}
+					else
+					{
+						timerOnSetting = true;	// Start timer
+						sTS = sT;
+						mTS = mT;
+						hTS = hT;
+						//timerSetting = false;	// Exit Timer setting screen
+						return true;
+					}
 				}
 				else
 				{
-					timerOnSetting = true;	// Start timer
-					sTS = sT;
-					mTS = mT;
-					hTS = hT;
-					//timerSetting = false;	// Exit Timer setting screen
 					return true;
 				}
 			}
@@ -1212,6 +1283,10 @@ boolean HeldRightButton()
 				startCounting = false;	// Set variable to indicate the countdown just started
 				arduboy.digitalWriteRGB(RGB_OFF, RGB_ON, RGB_ON);	// Turn on light to indicate the button is being held
 			}
+		}
+		else if (screenSaverSetting)
+		{
+			screenSaverType = true;
 		}
 	}
 	// Check if no button has been pressed
@@ -1271,7 +1346,7 @@ void DisplayMain()
 	h = *(arrD + 2);	// Extract hours from array as per previous function
 	arduboy.setTextSize(2);	// Increase font size
 	arduboy.setCursor(17, 25);	// Set location for clock
-	clockText = CreateDisplayText(s, m, h, true, false);	// Add to display buffer by calling function to create the time text
+	clockText = CreateDisplayText(s, m, h, true, false, false);	// Add to display buffer by calling function to create the time text
 	arduboy.print(clockText); // Print clock
 	
 	ardTiny.setCursor(55, 13);
@@ -1292,7 +1367,7 @@ void DisplayMain()
 			arduboy.print("PM");
 		}
 
-		alarmClock = CreateDisplayText(sA, mA, hA, false, false);
+		alarmClock = CreateDisplayText(sA, mA, hA, false, false, false);
 		ardTiny.setCursor(14, 57);
 		if (ampmA)
 		{
@@ -1305,7 +1380,7 @@ void DisplayMain()
 	}
 	else
 	{
-		alarmClock = CreateDisplayText(sA, mA, hA, false, false);
+		alarmClock = CreateDisplayText(sA, mA, hA, false, false, false);
 		ardTiny.setCursor(14, 57);
 		if (ampmA)
 		{
@@ -1316,7 +1391,7 @@ void DisplayMain()
 			ardTiny.print(alarmClock);
 		}
 	}
-	timerClock = CreateDisplayText(sT, mT, hT, false, true);
+	timerClock = CreateDisplayText(sT, mT, hT, false, true, false);
 	ardTiny.setCursor(70, 57);
 	ardTiny.print(timerClock);
 	
@@ -1342,22 +1417,6 @@ void DisplayMain()
 		ardTiny.setCursor(122, 37);
 		ardTiny.print("E");
 	}
-	
-	
-
-	
-	/* Section used for debugging
-	arduboy.setTextSize(1);
-	arduboy.setCursor(locX + 2, locY+50);
-	if (ampm)
-	{
-		arduboy.print("AM");
-	}
-	else
-	{
-		arduboy.print("PM");
-	}
-	*/
 }
 
 // Display the Alarm setting screen
@@ -1464,7 +1523,7 @@ void DisplayAlarm()
 	mA = *(arrD + 1);	// Extract minutes from array as per previous function
 	hA = *(arrD + 2);	// Extract hours from array as per previous function
 	arduboy.setTextSize(2);	// Increase font size
-	arduboy.print(CreateDisplayText(sA, mA, hA, false, false));	// Add to display buffer by calling function to create the time text
+	arduboy.print(CreateDisplayText(sA, mA, hA, false, false, false));	// Add to display buffer by calling function to create the time text
 	arduboy.setTextSize(1);	// Reset font size
 
 	if (clockType)
@@ -1481,20 +1540,7 @@ void DisplayAlarm()
 			arduboy.setTextSize(1);
 			arduboy.print("PM");
 		}
-	}
-	/* Section used for debugging
-	arduboy.setTextSize(1);
-	arduboy.setCursor(locX + 2, locY+50);
-	if (ampmA)
-	{
-	arduboy.print("AM");
-	}
-	else
-	{
-	arduboy.print("PM");
-	}
-	*/
-	
+	}	
 }
 
 // Display the Timer setting screen
@@ -1569,22 +1615,7 @@ void DisplayTimer()
 		arduboy.setTextSize(1);
 		arduboy.print("OFF");
 	}
-	/*
-	String timerStatusText;	// Used for displaying if Timer if Runnig or OFF
-	// Verify Timer status and set string accordingly
-	if (timerOnSetting)
-	{
-		timerStatusText = " Hold RIGHT to Stop";
-	}
-	else
-	{
-		timerStatusText = " Hold RIGHT to Start";
-	}
 
-	arduboy.setCursor(0, 0);	// Set location for text
-	arduboy.print(" TIMER SETTINGS\n\r" + timerStatusText);	// Add to display buffer
-	*/
-	// Check if timer is not running, User cannot change the timer if it is currently running
 	if (!timerOnSetting)
 	{
 		arrD = AdjustTime(sT, mT, hT, false, true);	// Call funtion to change time if user choose to
@@ -1594,7 +1625,7 @@ void DisplayTimer()
 	}
 	arduboy.setCursor(17, 25);	// Set location for text
 	arduboy.setTextSize(2);	// Increase font size
-	arduboy.print(CreateDisplayText(sT, mT, hT, false, true));	// Add to display buffer by calling function to create the time text
+	arduboy.print(CreateDisplayText(sT, mT, hT, false, true, false));	// Add to display buffer by calling function to create the time text
 	arduboy.setTextSize(1);	// Reset font size
 
 }
@@ -1642,8 +1673,11 @@ void ResetButtonHeldCounter()
 
 	if (millis() >= returnCount && !returnCounting)
 	{
+		
 		timerSetting = false;
 		alarmSetting = false;
+		screenSaverSetting = false;
+		
 		returnCount = 0;	// Reset the 
 	}
 	if (returnCounting)
@@ -1668,4 +1702,364 @@ void ResetTimer()
 	sT = sTS;
 	mT = mTS;
 	hT = hTS;
+}
+
+
+// PONG ADDON CODE
+
+void DisplayPong()
+{
+	DrawFrame();
+	ardTiny.setCursor(15, 2);
+	ardTiny.print("ALARM");
+	ardTiny.setCursor(90, 2);
+	ardTiny.print("TIMER");
+	// Display Timer if running
+	if (timerOnSetting)
+	{
+		arduboy.setCursor(74, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
+
+	}
+	else
+	{
+		arduboy.setCursor(71, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
+	}
+	// Display Alarm if its ON
+	if (alarmOnSetting)
+	{
+		arduboy.setCursor(44, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("ON");
+	}
+	else
+	{
+		arduboy.setCursor(41, 2); // +3 ON
+		arduboy.setTextSize(1);
+		arduboy.print("OFF");
+	}
+
+	// Left border
+	ardTiny.setCursor(02, 22);
+	ardTiny.print("P");
+	ardTiny.setCursor(02, 27);
+	ardTiny.print("O");
+	ardTiny.setCursor(02, 32);
+	ardTiny.print("N");
+	ardTiny.setCursor(02, 37);
+	ardTiny.print("G");
+
+	// Right border
+	ardTiny.setCursor(122, 20);
+	ardTiny.print("B");
+	ardTiny.setCursor(122, 25);
+	ardTiny.print("L");
+	ardTiny.setCursor(122, 30);
+	ardTiny.print("A");
+	ardTiny.setCursor(122, 35);
+	ardTiny.print("N");
+	ardTiny.setCursor(122, 40);
+	ardTiny.print("K");
+
+	// Bottom
+	ardTiny.setCursor(29, 57);
+	ardTiny.print("SCREEN");
+	ardTiny.setCursor(70, 57);
+	ardTiny.print("SAVER");
+
+	// Top 
+	ardTiny.setCursor(37, 14);
+	ardTiny.print("30SEC DELAY");
+	if (!screenSaverType)
+	{
+		arduboy.drawFastHLine(40, 18, 47, WHITE);
+		arduboy.drawFastVLine(40, 18, 31, WHITE);
+		arduboy.drawFastHLine(40, 49, 47, WHITE);
+		arduboy.drawFastVLine(87, 18, 31, WHITE);
+		arduboy.drawFastVLine(42, 23, 6, WHITE);
+		arduboy.drawFastVLine(85, 39, 6, WHITE);
+		arduboy.drawCircle(63, 32, 1, WHITE);
+		ardTiny.setCursor(52, 20);
+		ardTiny.print("12:00");
+		ardTiny.setCursor(55, 43);
+		ardTiny.print("PONG");
+		
+	}
+	else
+	{
+		arduboy.drawFastHLine(40, 18, 47, WHITE);
+		arduboy.drawFastVLine(40, 18, 31, WHITE);
+		arduboy.drawFastHLine(40, 49, 47, WHITE);
+		arduboy.drawFastVLine(87, 18, 31, WHITE);
+		ardTiny.setCursor(52, 32);
+		ardTiny.print("BLANK");
+	}
+
+	if (arduboy.pressed(A_BUTTON) && SingleButton("A") && buttonHeld)
+	{
+		ssONOFF = !ssONOFF;
+		buttonHeld = false;
+	}
+	if (ssONOFF)
+	{
+		ardTiny.setCursor(98, 57);
+		ardTiny.print("ON");
+	}
+	else
+	{
+		ardTiny.setCursor(98, 57);
+		ardTiny.print("OFF");
+	}
+	
+}
+
+
+void Pong()
+{
+	DrawPlayArea();
+	PlayGame();
+	MoveBall();
+	ballBounce();
+	MovePad();
+	PadBoundary();
+	DrawPad();
+	AIPad();
+	ScoreDisplay();
+	arduboy.display();
+}
+
+void PlayGame()
+{
+	if (arduboy.pressed(A_BUTTON))
+	{
+		arduboy.setFrameRate(60);
+		xSpeed = 1;
+	}
+	else
+	{
+		arduboy.setFrameRate(15);
+	}
+}
+
+void MoveBall()
+{
+	xDir += xMove * xSpeed;
+	yDir += yMove * ySpeed;
+}
+
+
+void ballBounce()
+{
+	if (xDir > WIDTH - ballRadius && (yDir > yP2 + yPL || yDir < yP2))
+	{
+		ResetPlay(true);
+		p1Score++;
+	}
+	if (xDir < 0 + ballRadius && (yDir > yP1 + yPL || yDir < yP1))
+	{
+		ResetPlay(true);
+		p2Score++;
+	}
+
+	if (yDir + ballRadius >= HEIGHT - ballRadius)
+	{
+		yMove = -yMove;
+	}
+
+	if (yDir - ballRadius <= 0 + ballRadius)
+	{
+		yMove = -yMove;
+	}
+
+	// P1 Side
+	if ((yDir >= yP1 - ballRadius && yDir <= yP1 + yPL + ballRadius) && xDir <= xP1 + ballRadius)
+	{
+		if (!direction)
+		{
+			xMove = -xMove;
+			direction = !direction;
+		}
+
+		aiWin = rand() % 5;
+		AdjustSpeed();
+	}
+
+	// P2 Side
+	if ((yDir >= yP2 - ballRadius && yDir <= yP2 + yPL + ballRadius) && xDir >= xP2 - ballRadius)
+	{
+		if (direction)
+		{
+			xMove = -xMove;
+			direction = !direction;
+		}
+		aiWin = rand() % 5;
+		AdjustSpeed();
+	}
+}
+
+// Reset Play 'RoundOrGame' TRUE = Round, FALSE = Game
+void ResetPlay(bool RoundOrGame)
+{
+	xDir = WIDTH / 2;
+	yDir = HEIGHT / 2;
+	aiWin = 5;
+	xMove = -xMove;
+	if (xMove > 0)
+	{
+		direction = true;
+	}
+	else
+	{
+		direction = false;
+	}
+	if (!RoundOrGame)
+	{
+		xSpeed = 3;
+		ySpeed = 3;
+		p1Wins = 0;
+		p2Wins = 0;
+		p1Score = 0;
+		p2Score = 0;
+	}
+}
+void AdjustSpeed()
+{
+	if (rand() % 5 != 0)
+	{
+		xSpeed = rand() % 5 + 1;
+	}
+	if (rand() % 5 != 0)
+	{
+		ySpeed = rand() % 4;
+	}
+}
+void DrawPad()
+{
+	arduboy.drawFastVLine(xP1, yP1, yPL, WHITE);
+	arduboy.drawFastVLine(xP1 - 1, yP1, yPL, WHITE);
+	arduboy.drawFastVLine(xP2, yP2, yPL, WHITE);
+	arduboy.drawFastVLine(xP2 + 1, yP2, yPL, WHITE);
+}
+
+void MovePad()
+{
+	if (arduboy.pressed(UP_BUTTON) && arduboy.pressed(A_BUTTON))
+	{
+		yP1 -= 3;
+	}
+	else if (arduboy.pressed(DOWN_BUTTON) && arduboy.pressed(A_BUTTON))
+	{
+		yP1 += 3;
+	}
+}
+
+void AIPad()
+{
+	if (xMove < 0 && aiWin != 0 && arduboy.notPressed(A_BUTTON))
+	{
+		yP1 = yDir - 7;
+	}
+	else if (xMove < 0 && arduboy.notPressed(A_BUTTON))
+	{
+		yP1 = yDir + 7;
+	}
+
+	if (xMove > 0 && aiWin != 0)
+	{
+		yP2 = yDir - 7;
+	}
+	else if (xMove > 0)
+	{
+		yP2 = yDir + 7;
+	}
+}
+
+void PadBoundary()
+{
+	if (yP1 <= 1)
+	{
+		yP1 = 1;
+	}
+	else if (yP1 + yPL >= HEIGHT - 1)
+	{
+		yP1 = HEIGHT - 1 - yPL;
+	}
+
+	if (yP2 <= 1)
+	{
+		yP2 = 1;
+	}
+	else if (yP2 + yPL >= HEIGHT - 1)
+	{
+		yP2 = HEIGHT - 1 - yPL;
+	}
+}
+
+void ScoreDisplay()
+{
+
+	for (size_t i = 0; i < 10 - p1Score; i++)
+	{
+		arduboy.drawPixel(60, 57 - (i * 2), WHITE);
+	}
+
+	for (size_t i = 0; i < 10 - p2Score; i++)
+	{
+		arduboy.drawPixel(66, 57 - (i * 2), WHITE);
+	}
+
+	for (size_t i = 0; i < 10 - p1Wins; i++)
+	{
+		arduboy.drawCircle(60 - (i * 4), 60, 1, WHITE);
+	}
+
+	for (size_t i = 0; i < 10 - p2Wins; i++)
+	{
+		arduboy.drawCircle(66 + (i * 4), 60, 1, WHITE);
+	}
+
+	arduboy.setCursor(49, 02);
+	arduboy.print(CreateDisplayText(s, m, h, false, false, true));
+
+	if (p1Score > 10)
+	{
+		p1Wins++;
+		p1Score = 0;
+		p2Score = 0;
+		xSpeed = 1;
+		ySpeed = 1;
+	}
+	else if (p2Score > 10)
+	{
+		p2Wins++;
+		p1Score = 0;
+		p2Score = 0;
+		xSpeed = 1;
+		ySpeed = 1;
+	}
+
+	if (p1Wins > 10 || p2Wins > 10 || arduboy.pressed(B_BUTTON))
+	{
+		ResetPlay(false);
+	}
+
+}
+
+void DrawPlayArea()
+{
+	arduboy.drawCircle(xDir, yDir, ballRadius, WHITE);
+	arduboy.drawTriangle(xDir - 1, yDir + 1, xDir, yDir - 1, xDir + 1, yDir + 1, WHITE);
+
+
+	arduboy.drawFastHLine(0, 0, WIDTH, WHITE);	// top
+	arduboy.drawFastHLine(0, HEIGHT - 1, WIDTH, WHITE);	// bottom
+	arduboy.drawFastVLine(0, 0, HEIGHT, WHITE);	// left
+	arduboy.drawFastVLine(WIDTH - 1, 0, HEIGHT, WHITE);	// right
+	arduboy.drawFastVLine(WIDTH / 2 - 1, 0, HEIGHT, WHITE); // center
+	arduboy.drawCircle(-1, HEIGHT / 2 - 1, HEIGHT / 2, WHITE);
+	arduboy.drawCircle(WIDTH + 1, HEIGHT / 2 - 1, HEIGHT / 2, WHITE);
+
 }
