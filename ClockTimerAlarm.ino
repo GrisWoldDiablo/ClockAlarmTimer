@@ -150,8 +150,8 @@ long timeOffsetMillis = 18;	// 18 Milliseconds Offset every 10 seconds for time 
 String clockText;	// Text variable for Clock
 String clockS = ":";// Seperator between clock digit
 int h = 12, m = 0, s = 0;	// h:Hours, m:Minutes, s:Seconds
-String secD = "0";	// Make seconds diplay as 01 instead of 1
-String minD = "0";	// Make minutes diplay as 01 instead of 1
+String secD = "0";	// Make seconds display as 01 instead of 1
+String minD = "0";	// Make minutes display as 01 instead of 1
 String hourD = " ";	// Add space in front of hour to center display
 
 bool clockType = true;	// 12 or 24 hour clock type, TRUE = 12h AM/PM, FALSE = 24h 
@@ -159,7 +159,7 @@ String clockTypeText; // Display 12h or 24h depending of clock type
 bool ampm = true;	// Used if clock type set to 12h, TRUE = AM, FALSE = PM
 String ampmText = " AM";	// Show AM or PM to clock display
 
-bool diplayOnOff = true;	// Display On or Off, TRUE = ON, FALSE = OFF
+bool displayOnOff = true;	// Display On or Off, TRUE = ON, FALSE = OFF
 
 int locX = 0, locY = 0;	// Clock location on display Default locX = 0, locY = 0
 int sAv, mAv, hAv; // Variable used to adjust time. Seconds, Minutes, Hours.
@@ -326,6 +326,7 @@ long ssCDT = 30000; // 30 Seconds
 
 void setup()
 {
+
 	ardtune.initChannel(PIN_SPEAKER_1);	// Initialise first speaker pin
 	ardtune.initChannel(PIN_SPEAKER_2);	// Initialise second speaker pin
 	arduboy.boot();	// Boot the Arduboy with not logo. Straight to the App.
@@ -366,7 +367,7 @@ void loop()
 		}*/
 
 		// Pause clock hold A and B, Only works with screen ON
-		if (arduboy.pressed(A_BUTTON) && arduboy.pressed(B_BUTTON) && diplayOnOff && !alarmSetting && !timerSetting)
+		if (arduboy.pressed(A_BUTTON) && arduboy.pressed(B_BUTTON) && displayOnOff && !alarmSetting && !timerSetting)
 		{
 			sc = frameRate;
 			return;
@@ -393,8 +394,17 @@ void loop()
 		ardtune.playScore(score);	// Play the stored score
 		alarmOnSetting = false;	// Turn off the Alarm setting to OFF
 	}
-	
-	if (PongScreenSaver)
+
+	ShowDisplay();	// Call function and verify if the used is trying to turn ON or OFF the display
+
+	// Exit loop function if screen should be OFF
+	if (!displayOnOff)
+	{	
+
+		//arduboy.display();
+		return;
+	}
+	else if (PongScreenSaver)
 	{
 		if (ssONOFF)
 		{
@@ -419,14 +429,8 @@ void loop()
 		}
 
 	}
-	ShowDisplay();	// Call function and verify if the used is trying to turn ON or OFF the display
-
-	// Exit loop function if screen should be OFF
-	if (!diplayOnOff)
-	{
-		arduboy.display();
-		return;
-	}
+	
+	
 	
 	HeldLeftButton();	// Call function and verify if user want to turn the Alarm ON or OFF
 	HeldRightButton();	// Call function and verify if user want to Start or Stop the Timer
@@ -527,9 +531,10 @@ void ShowDisplay()
 	if (arduboy.pressed(LEFT_BUTTON) && arduboy.pressed(RIGHT_BUTTON) && arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(UP_BUTTON) && arduboy.notPressed(DOWN_BUTTON))
 	{
 		arduboy.clear();	// Clear display buff
-		arduboy.display();	// Show what is on the diplay buffer (nothing since it just go cleared)
+		arduboy.display();	// Show what is on the display buffer (nothing since it just go cleared)
 		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);	// Turn off LEDs if any were on while transitioning
-		diplayOnOff = false;	// Set the variable that detects Display to be OFF
+		displayOnOff = false;	// Set the variable that detects Display to be OFF
+		arduboy.displayOff();
 		startCounting = true;	// Reset the variable that detects how long a button has be held
 		alarmSetting = false;	// Turn off the Alarm screen variable so when the user turn the screen back ON its back to Main screen
 		timerSetting = false;	// Turn off the Timer screen variable so when the user turn the screen back ON its back to Main screen
@@ -540,7 +545,8 @@ void ShowDisplay()
 	else if (arduboy.pressed(UP_BUTTON) && arduboy.pressed(DOWN_BUTTON) && arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON) && arduboy.notPressed(LEFT_BUTTON) && arduboy.notPressed(RIGHT_BUTTON))
 	{
 		arduboy.digitalWriteRGB(RGB_OFF, RGB_OFF, RGB_OFF);	// Turn off LEDs if any were on while transitioning
-		diplayOnOff = true;	// Set the variable that detects Display to be ON
+		displayOnOff = true;	// Set the variable that detects Display to be ON
+		arduboy.displayOn();
 	}
 	NoButton();
 }
@@ -927,7 +933,7 @@ int SecondTurn(bool changeS, bool ClockOrAlarm, bool setTimer)
 // Combine necessary strings to present the time, 'ClockOrAlarm' TRUE=Clock, FALSE=Alarm, 'Timer' TRUE=Timer Display
 String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer, bool Pong)
 {
-	// Seconds diplay as 01 instead of 1
+	// Seconds display as 01 instead of 1
 	if (sD >= 0 && sD <= 9)
 	{
 		secD = "0";
@@ -936,7 +942,7 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer, 
 	{
 		secD = "";
 	}
-	// Minutes diplay as 01 instead of 1
+	// Minutes display as 01 instead of 1
 	if (mD >= 0 && mD <= 9)
 	{
 		minD = "0";
@@ -968,7 +974,7 @@ String CreateDisplayText(int sD, int mD, int hD, bool ClockOrAlarm, bool Timer, 
 		}
 	}
 
-	// Diplay AM or PM if clock set to 12h type Or nothing if is the Timer diplay
+	// display AM or PM if clock set to 12h type Or nothing if is the Timer display
 	if (clockType && !Timer)
 	{
 		if (ClockOrAlarm)
@@ -1016,7 +1022,8 @@ boolean NoButton()
 			{
 				if (screenSaverType)
 				{
-					diplayOnOff = false;
+					displayOnOff = false;
+					arduboy.displayOff();
 				}
 				else
 				{
@@ -1331,7 +1338,7 @@ void DisplayMain()
 		arduboy.setTextSize(1);
 		arduboy.print("ON");
 	}
-	// Diplay how to access Alarm screen
+	// display how to access Alarm screen
 	else
 	{
 		arduboy.setCursor(41, 2);
